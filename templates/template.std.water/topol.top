@@ -1,0 +1,9 @@
+#include "ffgmx.itp"
+#include "tip4p.itp"
+
+[ system ]
+Ice Ih
+
+[ molecules ]
+SOL	432
+
