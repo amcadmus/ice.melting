@@ -89,17 +89,17 @@ tc-grps                  = System
 tau_t                    = 0.5
 ref_t                    = 300
 ; Pressure coupling     
-Pcoupl                   = no
-Pcoupltype               = isotropic
+Pcoupl                   = parrinello-rahman
+Pcoupltype               = anisotropic
 ; Time constant (ps), compressibility (1/bar) and reference P (bar)
-tau_p                    = 0.5
-compressibility          = 4.5e-5
-ref_p                    = 1.0
+tau_p                    = 0.5 0.5 0.5 0.5 0.5 0.5
+compressibility          = 4.5e-5 4.5e-5 4.5e-5 4.5e-5 4.5e-5 4.5e-5
+ref_p                    = 1.0 1.0 1.0 0.0 0.0 0.0
 ; Random seed for Andersen thermostat
 
 ; GENERATE VELOCITIES FOR STARTUP RUN
-gen_vel                  = yes
-gen_temp                 = 300
+gen_vel                  = no
+gen_temp                 = 150
 gen_seed                 = 1993
 
 ; OPTIONS FOR BONDS    
