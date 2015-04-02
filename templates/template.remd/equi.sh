@@ -16,16 +16,15 @@ do
 	echo "does not exist dir $dir_current, exit"
 	exit
     fi
+    cd $dir_current
     if test -f equied; then
 	echo "# dir $dir_current already equied, continue"
 	continue
     fi
     echo "# run in dir $dir_current"
-    cd $dir_current
     $grompp_cmd -n index.ndx
     rm -f state.cpt
     $mdrun_equi_cmd -nsteps $gmx_nsteps
-    grocleanit
     touch equied
     cd $dir_base    
 done

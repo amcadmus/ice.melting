@@ -25,8 +25,6 @@ do
     
     # echo "## generate mdp"
     cp -a md.seed $dir_current    
-
-    cd $dir_base
 done
 
 ./update.dir.sh
