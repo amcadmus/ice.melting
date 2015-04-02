@@ -19,7 +19,15 @@ do
     fi
     echo "# grompp in dir $dir_current"
     cd $dir_current
-    $grompp_cmd -n index.ndx &> grompp.log
+    if test ! -f equied; then
+	echo "dir $dir_current not equilibriated, exit"
+	exit
+    fi
+    if test ! -f state.cpt; then
+	echo "no state.cpt, may not be equilibriated, exit"
+	exit
+    fi
+    $grompp_cmd -n index.ndx -t state.cpt &> grompp.log
     cd $dir_base
 done
 
