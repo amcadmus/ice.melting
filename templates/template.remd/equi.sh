@@ -18,7 +18,7 @@ do
     fi
     echo "# grompp in dir $dir_current"
     cd $dir_current
-    $grompp_cmd -n index.ndx
+    $grompp_cmd -n index.ndx &> grompp.log
     cd $dir_base
 done
 
