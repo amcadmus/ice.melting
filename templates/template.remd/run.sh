@@ -13,5 +13,5 @@ nrep=`echo $temperatures | wc -w`
 
 command="mpirun -n $nrep $mdrun_cmd -multidir dir* -replex $gmx_nreplex -v -nsteps $gmx_nsteps"
 echo "#run with command: $command"
-
+$command
 
