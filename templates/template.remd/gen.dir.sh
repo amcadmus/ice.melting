@@ -13,8 +13,8 @@ for temperature in $temperatures ;
 do 
     dir_current=dir.$temperature
     if test -d $dir_current; then
-	echo "exist dir $dir_current, exit"
-	exit
+	echo "exist dir $dir_current, continue"
+	continue
     fi
     if test ! -d md.seed; then
 	echo "the dir md.seed does not exist, exit"
