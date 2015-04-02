@@ -22,7 +22,6 @@ do
     # echo "## generate mdp"
     cd $dir_current
     sed -e "s/ref_t.*=.*/ref_t = $temperature/g" grompp.mdp | \
-    sed -e "s/xtc-grps.*=.*/xtc-grps = OW/g" | \
     sed -e "s/nstlog.*=.*/nstlog = 0/g" | \
     sed -e "s/nstenergy.*=.*/nstenergy = $gmx_nenergy/g" | \
     sed -e "s/nstcomm.*=.*/nstcomm = $gmx_nenergy/g" | \
@@ -33,6 +32,8 @@ do
     sed -e "s/gen_vel.*=.*/gen_vel = no/g" | \
     sed -e "s/nsteps.*=.*/nsteps = $gmx_nsteps/g" > tmp.tmp
     mv -f tmp.tmp grompp.mdp    
+
+#    sed -e "s/xtc-grps.*=.*/xtc-grps = OW/g" | \
 
     # echo "## generate index"
     if test ! -d index.ndx; then
