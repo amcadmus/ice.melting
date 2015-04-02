@@ -1,8 +1,10 @@
 #!/bin/bash
 
-gmx_dt=0.002			# in ps
 gmx_equi_time=10		# in ps
 gmx_time=1000000		# in ps
+gmx_replex=1			# in ps
+
+gmx_dt=0.002			# in ps
 gmx_xtc_feq=10.0		# in ps
 gmx_trr_feq=0			# in ps
 
