@@ -5,6 +5,7 @@ source parameters.sh
 gmx_nsteps=`echo "($gmx_dt*0.5+$gmx_time) / $gmx_dt" | bc`
 gmx_nxtc=`echo "($gmx_dt*0.5+$gmx_xtc_feq) / $gmx_dt" | bc`
 gmx_ntrr=`echo "($gmx_dt*0.5+$gmx_trr_feq) / $gmx_dt" | bc`
+gmx_nenergy=`echo "($gmx_dt*0.5+$gmx_energy_feq) / $gmx_dt" | bc`
 
 dir_base=`pwd`
 
@@ -22,6 +23,9 @@ do
     cd $dir_current
     sed -e "s/ref_t.*=.*/ref_t = $temperature/g" grompp.mdp | \
     sed -e "s/xtc-grps.*=.*/xtc-grps = OW/g" | \
+    sed -e "s/nstlog.*=.*/nstlog = 0/g" | \
+    sed -e "s/nstenergy.*=.*/nstenergy = $gmx_nenergy/g" | \
+    sed -e "s/nstcomm.*=.*/nstcomm = $gmx_nenergy/g" | \
     sed -e "s/nstxtcout.*=.*/nstxtcout = $gmx_nxtc/g" | \
     sed -e "s/nstxout.*=.*/nstxout = $gmx_ntrr/g" | \
     sed -e "s/nstvout.*=.*/nstvout = $gmx_ntrr/g" | \

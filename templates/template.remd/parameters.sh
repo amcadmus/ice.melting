@@ -7,6 +7,7 @@ gmx_replex=1			# in ps
 gmx_dt=0.002			# in ps
 gmx_xtc_feq=10.0		# in ps
 gmx_trr_feq=0			# in ps
+gmx_energy_feq=10		# in ps
 
 grompp_cmd=grompp
 mdrun_equi_cmd="mdrun -nt 4 -v"
