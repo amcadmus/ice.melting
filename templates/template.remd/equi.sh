@@ -16,11 +16,11 @@ do
 	echo "does not exist dir $dir_current, exit"
 	exit
     fi
-    cd $dir_current
-    if test -f equied; then
+    if test -f $dir_current/equied; then
 	echo "# dir $dir_current already equied, continue"
 	continue
     fi
+    cd $dir_current
     echo "# run in dir $dir_current"
     $grompp_cmd -n index.ndx
     rm -f state.cpt
