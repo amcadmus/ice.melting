@@ -90,9 +90,10 @@ tau_t                    = 0.2
 ref_t = 310
 ; Pressure coupling     
 Pcoupl                   = parrinello-rahman
+;Pcoupl                   = no
 Pcoupltype               = isotropic
 ; Time constant (ps), compressibility (1/bar) and reference P (bar)
-tau_p                    = 2.0
+tau_p                    = 20.0
 compressibility          = 4.5e-5
 ref_p                    = 1.0
 ; Random seed for Andersen thermostat
