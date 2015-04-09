@@ -12,8 +12,12 @@ gmx_dt=0.002			# in ps
 gmx_temperature=252.10		# in K
 gmx_tau_t=0.1			# in ps
 gmx_tau_box=40			# in ps
+gmx_pcoupltype=anisotropic
 plumed_cv_temperature=100000	# in K
 plumed_cv_tau=1000		# in ps
+plumed_cv_kappa=500000		# take 432 water system as reference
+plumed_nlist_rc=0.7
+plumed_nlist_feq=50
 
 # output control
 gmx_xtc_feq=10.0		# in ps
