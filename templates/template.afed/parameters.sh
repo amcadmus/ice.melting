@@ -25,9 +25,8 @@ gmx_trr_feq=0			# in ps
 gmx_energy_feq=10		# in ps
 
 # commands
-grompp_cmd=grompp
-mdrun_equi_cmd="mdrun -nt 4 -v"
-mdrun_cmd="mdrun_mpi"
+grompp_cmd=grompp_mpi
+mdrun_cmd=mdrun_mpi
 #gmx_dir=$HOME/local/gromacs/4.6.5
 
 
