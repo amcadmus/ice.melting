@@ -20,7 +20,7 @@ cp -a md.seed $dir_current
 cd $dir_current
 
 echo "# gen conf"
-genconf -nbox $system_box -f $system_base_conf -o out.gro
+genconf -nbox $system_box -f $system_base_conf -o out.gro &> /dev/null
 mv -f out.gro conf.gro
 
 echo "# update top"

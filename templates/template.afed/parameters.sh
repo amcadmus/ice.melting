@@ -20,9 +20,9 @@ plumed_nlist_rc=0.7
 plumed_nlist_feq=50
 
 # output control
-gmx_xtc_feq=10.0		# in ps
+gmx_xtc_feq=1.0			# in ps
 gmx_trr_feq=0			# in ps
-gmx_energy_feq=10		# in ps
+gmx_energy_feq=1.0		# in ps
 
 # commands
 grompp_cmd=grompp_mpi
