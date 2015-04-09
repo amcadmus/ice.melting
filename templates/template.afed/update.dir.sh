@@ -20,6 +20,7 @@ echo "# update parameters in $dir_current"
     
 cd $dir_current
 
+echo "# update grompp.mdp"
 if echo $gmx_pcoupltype | grep anisotropic &> /dev/null; then
     tau_p_line="$gmx_tau_box $gmx_tau_box $gmx_tau_box $gmx_tau_box $gmx_tau_box $gmx_tau_box"
     ref_p_line="1 1 1 0 0 0"
@@ -47,6 +48,7 @@ sed -e "s/dt.*=.*/dt = $gmx_dt/g" grompp.mdp | \
     sed -e "s/nsteps.*=.*/nsteps = $gmx_nsteps/g" > tmp.tmp
 mv -f tmp.tmp grompp.mdp    
 
+echo "# update plumed.dat"
 rm -f plumed.dat
 cp $dir_base/md.seed/plumed.dat .
 nline=`wc -l conf.gro | awk '{print $1}'`
@@ -68,6 +70,7 @@ sed -e "s/INPUT_NATOM/$nline/g" plumed.dat |\
 mv -f tmp.tmp plumed.dat
 
 # echo "## generate index"
+echo "# update index.ndx"
 rm -f index.ndx
 if test ! -d index.ndx; then
     echo "a OW" > tmp.in
@@ -75,6 +78,10 @@ if test ! -d index.ndx; then
     cat tmp.in | make_ndx -f  conf.gro &> /dev/null
     rm -f tmp.in
 fi
+
+echo "# backup parameter"
+rm -f parameters.sh
+cp $dir_base/parameters.sh .
 
 cd $dir_base
 
