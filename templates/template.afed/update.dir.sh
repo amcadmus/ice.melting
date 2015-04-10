@@ -59,14 +59,18 @@ for ii in `echo $system_box`;
 do
     ratio=`echo "$ratio * $ii" | bc`
 done
-effective_kappa=`echo "$ratio * $plumed_cv_kappa" | bc -l`
+effective_q4_kappa=`echo "$ratio * $plumed_q4_kappa" | bc -l`
+effective_q6_kappa=`echo "$ratio * $plumed_q6_kappa" | bc -l`
 sed -e "s/INPUT_NATOM/$nline/g" plumed.dat |\
     sed -e "s/INPUT_NLIST_RC/$plumed_nlist_rc/g" |\
     sed -e "s/INPUT_NLIST_FEQ/$plumed_nlist_feq/g" |\
-    sed -e "s/INPUT_DT/$gmx_dt/g" |\
-    sed -e "s/INPUT_TEMP/$plumed_cv_temperature/g" |\
-    sed -e "s/INPUT_TAU/$plumed_cv_tau/g" |\
-    sed -e "s/INPUT_KAPPA/$effective_kappa/g" > tmp.tmp
+    sed -e "s/INPUT_TEMP_Q4/$plumed_q4_temperature/g" |\
+    sed -e "s/INPUT_TEMP_Q6/$plumed_q6_temperature/g" |\
+    sed -e "s/INPUT_TAU_Q4/$plumed_q4_tau/g" |\
+    sed -e "s/INPUT_TAU_Q6/$plumed_q6_tau/g" |\
+    sed -e "s/INPUT_KAPPA_Q4/$effective_q4_kappa/g" |\
+    sed -e "s/INPUT_KAPPA_Q6/$effective_q6_kappa/g" |\
+    sed -e "s/INPUT_DT/$gmx_dt/g" > tmp.tmp
 mv -f tmp.tmp plumed.dat
 
 # echo "## generate index"
