@@ -8,9 +8,6 @@
  OWT4    8 	15.99940       0.000       A	0.31589		0.77490
     H    1 	 1.0079	       0.000       A	0.00000E+00	0.00000E+00
 
-; This file is for backward compatibility only.
-; Please directly include the tip4p.itp file from your force field directory.
-;
 ; Note the strange order of atoms to make it faster in gromacs.
 ;
 [ moleculetype ]
@@ -51,9 +48,4 @@ SOL		2
 ; Vsite from			funct	a		b
 4	1	2	3	1	0.13193828      0.13193828
 
-[ system ]
-water tip4p/2005
-
-[ molecules ]
-SOL	432
 
