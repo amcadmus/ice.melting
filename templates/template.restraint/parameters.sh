@@ -3,7 +3,7 @@
 # system setting
 system_box="1 1 1"
 system_seed_dir=md.seed
-system_base_conf=conf.gro	# in $system_seed_dir
+system_base_conf=conf.sol.gro	# in $system_seed_dir
 system_running_dir=running
 
 # run time control
