@@ -1,1 +1,1 @@
-GMX_DIR=/home/wanghan/local/gromacs/4.6.7
+GMX_DIR=/home/wanghan/local/gromacs/4.6.7.plumed

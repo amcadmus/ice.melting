@@ -9,7 +9,7 @@ gmx_nenergy=`echo "($gmx_warm_dt*0.5+$gmx_energy_feq) / $gmx_warm_dt" | bc`
 
 dir_base=`pwd`
 
-dir_current=$system_running_dir
+dir_current=$system_warming_dir
 
 if test ! -d $dir_current; then
     echo "does not exist dir $dir_current, exit"
@@ -42,8 +42,8 @@ sed -e "s/dt.*=.*/dt = $gmx_warm_dt/g" grompp.mdp | \
     sed -e "s/gen_seed.*=.*/gen_seed = $gmx_warm_vel_seed/g" | \
     sed -e "s/ref_t.*=.*/ref_t = $gmx_temperature/g" |\
     sed -e "s/tau_t.*=.*/tau_t = $gmx_tau_t/g" |\
-    sed -e "s/Pcoupl.*=.*/Pcoupl = no/g" |\
-    sed -e "s/Pcoupltype.*=.*/Pcoupltype = $gmx_pcoupltype/g" |\
+    sed -e "s/Pcoupl .*=.*/Pcoupl = no/g" |\
+    sed -e "s/Pcoupltype .*=.*/Pcoupltype = $gmx_pcoupltype/g" |\
     sed -e "s/ref_p.*=.*/ref_p = $ref_p_line/g" |\
     sed -e "s/tau_p.*=.*/tau_p = $tau_p_line/g" |\
     sed -e "s/compressibility.*=.*/compressibility = $compres_line/g" |\

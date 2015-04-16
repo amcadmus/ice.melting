@@ -41,7 +41,7 @@ sed -e "s/dt.*=.*/dt = $gmx_dt/g" grompp.mdp | \
     sed -e "s/gen_vel.*=.*/gen_vel = no/g" | \
     sed -e "s/ref_t.*=.*/ref_t = $gmx_temperature/g" |\
     sed -e "s/tau_t.*=.*/tau_t = $gmx_tau_t/g" |\
-    sed -e "s/Pcoupltype.*=.*/Pcoupltype = $gmx_pcoupltype/g" |\
+    sed -e "s/Pcoupltype .*=.*/Pcoupltype = $gmx_pcoupltype/g" |\
     sed -e "s/ref_p.*=.*/ref_p = $ref_p_line/g" |\
     sed -e "s/tau_p.*=.*/tau_p = $tau_p_line/g" |\
     sed -e "s/compressibility.*=.*/compressibility = $compres_line/g" |\

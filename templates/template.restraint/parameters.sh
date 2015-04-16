@@ -3,7 +3,7 @@
 # system setting
 system_box="1 1 1"
 system_seed_dir=md.seed
-system_init_mode=traj
+system_init_mode=conf
 system_init_conf=conf.sol.gro	# in $system_seed_dir
 system_init_xtc=traj.xtc
 system_init_xtc_time=0.0
@@ -12,7 +12,7 @@ system_init_xtc_time=0.0
 system_warming_dir=warming
 gmx_warm_time=2
 gmx_warm_dt=0.001		# in ps
-gmx_warm_vel_seed=`time +%s`
+gmx_warm_vel_seed=`date +%s`
 
 # run time control
 system_running_dir=running
