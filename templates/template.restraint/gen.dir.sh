@@ -20,7 +20,7 @@ cp -a md.seed $dir_current
 cd $dir_current
 
 echo "# gen conf"
-genconf -nbox $system_box -f $system_base_conf -o out.gro &> /dev/null
+genconf -nbox $system_box -f $system_init_conf -o out.gro &> /dev/null
 mv -f out.gro conf.gro
 
 echo "# update top"
@@ -32,5 +32,8 @@ sed "s/SOL.*/SOL $nmol/g" topol.top > tmp.top
 mv -f tmp.top topol.top
 
 cd $dir_base
-./update.dir.sh
+
+cp -a $system_running_dir $system_warming_dir
+./update.warming.dir.sh
+./update.running.dir.sh
 
