@@ -114,6 +114,8 @@ int main(int argc, char * argv[])
 
   cout << "# force \t error" << endl;
   cout << v0/v1 << "\t" << ee << endl;
+
+  if (line != NULL) free (line);
   
   return 0;
 }
