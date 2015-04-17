@@ -19,6 +19,14 @@
 namespace po = boost::program_options;
 using namespace std;
 
+inline double
+dist (const double & q4, const double & q6,
+      const double ref_q4, const double ref_q6)
+{
+  return sqrt ( (q4 - ref_q4) * (q4 - ref_q4) + 
+		(q6 - ref_q6) * (q6 - ref_q6) );
+}
+
 int main(int argc, char * argv[])
 {
   std::string ifile, ofile;
@@ -53,14 +61,14 @@ int main(int argc, char * argv[])
   unsigned nq6 = (q6up - q6low + 0.5 * binSize) / binSize;
   
   vector<vector<bool > > active (nq4);
-  vector<vector<double > > first_time (nq4);
-  vector<vector<double > > last_time (nq4);
   vector<vector<int > > count_hit (nq4);
+  vector<vector<double > > min_distance (nq4);
+  vector<vector<double > > hit_time (nq4);
   for (unsigned ii = 0; ii < nq4; ++ii){
     active[ii].resize(nq6, false);
-    first_time[ii].resize(nq6, 0);
-    last_time[ii].resize(nq6, 0);
     count_hit[ii].resize(nq6, 0);
+    min_distance[ii].resize(nq6, 100 * binSize);
+    hit_time[ii].resize(nq6, -1);
   }
   
   char *line = NULL;
@@ -100,15 +108,58 @@ int main(int argc, char * argv[])
       cerr << "q6 " << q6 << " is out of range " << q6low << " " << q6up << endl;
       continue;
     }
-    if (! active[iq4][iq6]){
-      first_time[iq4][iq6] = time;
-    }
-    last_time[iq4][iq6] = time;
+
     active[iq4][iq6] = true;
+    active[iq4+1][iq6] = true;
+    active[iq4][iq6+1] = true;
+    active[iq4+1][iq6+1] = true;
     count_hit[iq4][iq6] ++;
-    // active[iq4+1][iq6] = true;
-    // active[iq4][iq6+1] = true;
-    // active[iq4+1][iq6+1] = true;
+    count_hit[iq4+1][iq6] ++;
+    count_hit[iq4][iq6+1] ++;
+    count_hit[iq4+1][iq6+1] ++;
+    double tmp_dist;
+    double ref_q4, ref_q6;
+    int pt_q4, pt_q6;
+//////////////////////////////////////////
+    pt_q4 = iq4;
+    pt_q6 = iq6;
+    ref_q4 = binSize * pt_q4;
+    ref_q6 = binSize * pt_q6;
+    tmp_dist = dist (q4, q6, ref_q4, ref_q6);
+    if (tmp_dist < min_distance[pt_q4][pt_q6]) {
+      min_distance[pt_q4][pt_q6] = tmp_dist;
+      hit_time[pt_q4][pt_q6] = time;
+    }
+//////////////////////////////////////////
+    pt_q4 = iq4+1;
+    pt_q6 = iq6;
+    ref_q4 = binSize * pt_q4;
+    ref_q6 = binSize * pt_q6;
+    tmp_dist = dist (q4, q6, ref_q4, ref_q6);
+    if (tmp_dist < min_distance[pt_q4][pt_q6]) {
+      min_distance[pt_q4][pt_q6] = tmp_dist;
+      hit_time[pt_q4][pt_q6] = time;
+    }
+//////////////////////////////////////////
+    pt_q4 = iq4;
+    pt_q6 = iq6+1;
+    ref_q4 = binSize * pt_q4;
+    ref_q6 = binSize * pt_q6;
+    tmp_dist = dist (q4, q6, ref_q4, ref_q6);
+    if (tmp_dist < min_distance[pt_q4][pt_q6]) {
+      min_distance[pt_q4][pt_q6] = tmp_dist;
+      hit_time[pt_q4][pt_q6] = time;
+    }
+//////////////////////////////////////////
+    pt_q4 = iq4+1;
+    pt_q6 = iq6+1;
+    ref_q4 = binSize * pt_q4;
+    ref_q6 = binSize * pt_q6;
+    tmp_dist = dist (q4, q6, ref_q4, ref_q6);
+    if (tmp_dist < min_distance[pt_q4][pt_q6]) {
+      min_distance[pt_q4][pt_q6] = tmp_dist;
+      hit_time[pt_q4][pt_q6] = time;
+    }
   }
   cout << endl;
   fclose (fp);
@@ -119,7 +170,7 @@ int main(int argc, char * argv[])
   for (unsigned ii = 0; ii < nq4; ++ii){
     for (unsigned jj = 0; jj < nq6; ++jj){
       if (active[ii][jj] && count_hit[ii][jj] >= min_hit){
-	fprintf (fp, "%f %f   %f %f %d\n", double(ii * binSize), double(jj * binSize), first_time[ii][jj], last_time[ii][jj], count_hit[ii][jj]);
+	fprintf (fp, "%f %f   %f %f\n", double(ii * binSize), double(jj * binSize), hit_time[ii][jj], min_distance[ii][jj]);
       }
     }
   }
