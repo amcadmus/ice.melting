@@ -39,6 +39,7 @@ sed -e "s/dt.*=.*/dt = $gmx_warm_dt/g" grompp.mdp | \
     sed -e "s/nstvout.*=.*/nstvout = $gmx_ntrr/g" | \
     sed -e "s/nstfout.*=.*/nstfout = 0/g" | \
     sed -e "s/gen_vel.*=.*/gen_vel = yes/g" | \
+    sed -e "s/gen_temp.*=.*/gen_temp = $gmx_temperature/g" | \
     sed -e "s/gen_seed.*=.*/gen_seed = $gmx_warm_vel_seed/g" | \
     sed -e "s/ref_t.*=.*/ref_t = $gmx_temperature/g" |\
     sed -e "s/tau_t.*=.*/tau_t = $gmx_tau_t/g" |\

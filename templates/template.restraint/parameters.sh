@@ -3,10 +3,10 @@
 # system setting
 system_box="1 1 1"
 system_seed_dir=md.seed
-system_init_mode=conf
+system_init_mode=traj
 system_init_conf=conf.sol.gro	# in $system_seed_dir
-system_init_xtc=traj.xtc
-system_init_xtc_time=0.0
+system_init_xtc=/home/mi/wanghan/study/ice.melting/templates/template.restraint/traj.xtc
+system_init_xtc_time=1.0
 
 # warmup control
 system_warming_dir=warming
@@ -16,7 +16,7 @@ gmx_warm_vel_seed=`date +%s`
 
 # run time control
 system_running_dir=running
-gmx_time=1000000		# in ps
+gmx_time=2000			# in ps
 gmx_dt=0.002			# in ps
 gmx_temperature=252.10		# in K
 gmx_tau_t=0.1			# in ps
