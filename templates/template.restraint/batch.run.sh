@@ -13,11 +13,11 @@ q6_ptr=`printf %.3f $q6`
 warming_dir=warming.$q4_ptr.$q6_ptr
 running_dir=running.$q4_ptr.$q6_ptr
 
-sed -e 's/plumed_q4_at=.*/plumed_q4_at=$q4/g' parameters.sh |\
-sed -e 's/plumed_q6_at=.*/plumed_q6_at=$q6/g' |\
-sed -e 's/system_warming_dir=.*/system_warming_dir=$warming_dir/g' |\
-sed -e 's/system_running_dir=.*/system_running_dir=$running_dir/g' |\
-sed -e 's/system_init_xtc_time=.*/system_init_xtc_time=$start_time/g' > tmp.tmp
+sed -e "s/plumed_q4_at=.*/plumed_q4_at=$q4/g" parameters.sh |\
+sed -e "s/plumed_q6_at=.*/plumed_q6_at=$q6/g" |\
+sed -e "s/system_warming_dir=.*/system_warming_dir=$warming_dir/g" |\
+sed -e "s/system_running_dir=.*/system_running_dir=$running_dir/g" |\
+sed -e "s/system_init_trr_time=.*/system_init_trr_time=$start_time/g" > tmp.tmp
 mv -f tmp.tmp parameters.sh
 
 ./gen.dir.sh
