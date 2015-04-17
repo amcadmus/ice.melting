@@ -24,8 +24,8 @@ gmx_tau_box=2			# in ps
 gmx_pcoupltype=isotropic
 plumed_q4_at=0.090000
 plumed_q6_at=0.060000
-plumed_q4_kappa=500000		# take 432 water system as reference
-plumed_q6_kappa=500000		# take 432 water system as reference
+plumed_q4_kappa=2000000		# take 432 water system as reference
+plumed_q6_kappa=2000000		# take 432 water system as reference
 plumed_nlist_rc=0.7
 plumed_nlist_feq=50
 
