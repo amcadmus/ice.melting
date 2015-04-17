@@ -19,8 +19,7 @@ echo "# compute the force in dir $target_dir"
 script_dir=$(cd ${0%/*} && echo $PWD)
 base_dir=$script_dir/../
 compute_force_dir=$base_dir/compute.force
-echo $script_dir
-echo $compute_force_dir
+make -C $compute_force_dir -j4
 
 cd $target_dir
 if test ! -f parameters.sh; then
