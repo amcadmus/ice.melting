@@ -19,7 +19,7 @@ echo "# compute the force in dir $target_dir"
 script_dir=$(cd ${0%/*} && echo $PWD)
 base_dir=$script_dir/../
 compute_force_dir=$base_dir/compute.force
-make -C $compute_force_dir -j4
+make -C $compute_force_dir -j4 &>/dev/null
 
 cd $target_dir
 if test ! -f parameters.sh; then
@@ -28,12 +28,12 @@ if test ! -f parameters.sh; then
 fi
 source parameters.sh
 echo "# compute q4, begin at $traj_start"
-command="$compute_force_dir/compute.reweight --input COVAR.res --column-cv 2 --begin $traj_start --ref-value $plumed_q4_at --evl-value $plumed_q4_at --kappa $plumed_q4_kappa --temperature $gmx_temperature"
+command="$compute_force_dir/compute.reweight --input COLVAR.res --column-cv 2 --begin $traj_start --ref-value $plumed_q4_at --evl-value $plumed_q4_at --kappa $plumed_q4_kappa --temperature $gmx_temperature"
 echo "# with command: $command"
 $command
 
 echo "# compute q6, begin at $traj_start"
-command="$compute_force_dir/compute.reweight --input COVAR.res --column-cv 3 --begin $traj_start --ref-value $plumed_q6_at --evl-value $plumed_q6_at --kappa $plumed_q6_kappa --temperature $gmx_temperature"
+command="$compute_force_dir/compute.reweight --input COLVAR.res --column-cv 3 --begin $traj_start --ref-value $plumed_q6_at --evl-value $plumed_q6_at --kappa $plumed_q6_kappa --temperature $gmx_temperature"
 echo "# with command: $command"
 $command
 
