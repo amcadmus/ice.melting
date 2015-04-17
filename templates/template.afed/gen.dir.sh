@@ -20,6 +20,10 @@ cp -a md.seed $dir_current
 cd $dir_current
 
 echo "# gen conf"
+if test ! -f $system_base_conf; then
+    echo "the file $system_base_conf does not exist, exit"
+    exit
+fi
 genconf -nbox $system_box -f $system_base_conf -o out.gro &> /dev/null
 mv -f out.gro conf.gro
 
