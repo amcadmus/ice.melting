@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # system setting
-system_box="1 1 2"
+system_box="1 1 1"
 system_seed_dir=md.seed
 system_base_conf=conf.gro	# in $system_seed_dir
 system_running_dir=running
@@ -18,7 +18,7 @@ plumed_q6_tau=1000		# in ps
 plumed_q6_kappa=500000		# take 432 water system as reference
 plumed_zl_tau=1000		# in ps
 plumed_zl_kappa=500000		# take 432 water system as reference
-plumed_zl_ref_n_layer=6
+plumed_zl_ref_numb=6
 plumed_nlist_rc=0.7
 plumed_nlist_feq=50
 

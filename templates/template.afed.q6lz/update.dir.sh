@@ -62,16 +62,16 @@ done
 effective_q6_kappa=`echo "$ratio * $plumed_q6_kappa" | bc -l`
 effective_zl_kappa=`echo "$ratio * $plumed_zl_kappa" | bc -l`
 nbox_z=`echo $system_box | awk '{print $3}' `
-effective_n_layer=`echo "$plumed_zl_ref_n_layer * $nbox_z" | bc `
+effective_n_zl=`echo "$plumed_zl_ref_numb * $nbox_z" | bc `
 sed -e "s/INPUT_NATOM/$nline/g" plumed.dat |\
     sed -e "s/INPUT_NLIST_RC/$plumed_nlist_rc/g" |\
     sed -e "s/INPUT_NLIST_FEQ/$plumed_nlist_feq/g" |\
     sed -e "s/INPUT_TEMP/$plumed_temperature/g" |\
     sed -e "s/INPUT_TAU_Q6/$plumed_q6_tau/g" |\
+    sed -e "s/INPUT_TAU_ZL/$plumed_zl_tau/g" |\
     sed -e "s/INPUT_KAPPA_Q6/$effective_q6_kappa/g" |\
-    sed -e "s/INPUT_TAU_LAYER/$plumed_zl_tau/g" |\
-    sed -e "s/INPUT_KAPPA_LAYER/$effective_zl_kappa/g" |\
-    sed -e "s/INPUT_NUMB_LAYER/$effective_n_layer/g" |\
+    sed -e "s/INPUT_KAPPA_ZL/$effective_zl_kappa/g" |\
+    sed -e "s/INPUT_NUMB_ZL/$effective_n_zl/g" |\
     sed -e "s/INPUT_DT/$gmx_dt/g" > tmp.tmp
 mv -f tmp.tmp plumed.dat
 
