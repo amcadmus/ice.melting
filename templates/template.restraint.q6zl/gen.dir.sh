@@ -1,5 +1,6 @@
 #!/bin/bash
 
+source env.sh
 source parameters.sh
 
 dir_base=`pwd`
@@ -20,7 +21,7 @@ cp -a md.seed $dir_current
 cd $dir_current
 
 echo "# gen conf"
-genconf -nbox $system_box -f $system_init_conf -o out.gro &> /dev/null
+$exec_genconf -nbox $system_box -f $system_init_conf -o out.gro &> /dev/null
 mv -f out.gro conf.gro
 
 echo "# update top"
