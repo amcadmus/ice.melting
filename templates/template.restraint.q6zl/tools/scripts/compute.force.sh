@@ -5,7 +5,7 @@ if test $# -lt 1; then
     echo "$0 target_dir [traj_start]"
 fi
 target_dir=$1
-traj_start=500
+traj_start=10000
 if test $# -ge 2; then
     traj_start=$2
 fi
@@ -34,6 +34,6 @@ echo "# with command: $command"
 $command
 
 echo "# compute zl, begin at $traj_start"
-command="$compute_force_dir/compute.reweight --input COLVAR.res --column-cv 2 --begin $traj_start --ref-value $plumed_zl_at --evl-value $plumed_zl_at --kappa $plumed_zl_kappa --temperature $gmx_temperature"
+command="$compute_force_dir/compute.reweight --input COLVAR.res --column-cv 5 --begin $traj_start --ref-value $plumed_zl_at --evl-value $plumed_zl_at --kappa $plumed_zl_kappa --temperature $gmx_temperature"
 echo "# with command: $command"
 $command
