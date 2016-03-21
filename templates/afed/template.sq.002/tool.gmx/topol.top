@@ -1,0 +1,7 @@
+#include "tip4p2005.itp"
+
+[ system ]
+water tip4p/2005
+
+[ molecules ]
+SOL 432
