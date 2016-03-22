@@ -22,7 +22,7 @@ copy_x=`printf %02d $copy_x`
 copy_y=`printf %02d $copy_y`
 copy_z=`printf %02d $copy_z`
 afed_tau=`printf %04d $afed_tau`
-out_dir=${copy_x}x${copy_y}x${copy_z}.t${afed_T}K.tau$afed_tau
+out_dir=${system_start_state}.${copy_x}x${copy_y}x${copy_z}.t${afed_T}K.tau$afed_tau
 
 if test -d $out_dir; then
     echo "existing dir $out_dir, do nothing"
@@ -33,6 +33,7 @@ traj_n_freq=`echo "($md_traj_freq + 0.5 * $md_dt) / $md_dt " | bc`
 ener_n_freq=`echo "($md_ener_freq + 0.5 * $md_dt) / $md_dt " | bc`
 
 # copy dir
+echo "# using conf file md/$system_start_conf"
 echo "# using top file tops/top.input.$system_top_style"
 cp -a $system_seed_dir $out_dir
 rm -f $out_dir/top.input
