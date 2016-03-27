@@ -1,0 +1,81 @@
+Atoms {
+	OW { mass = 15.99940	charge = 0.000	vdw_type = 1 }
+	HW { mass =  1.00800	charge = 0.5564	vdw_type = 0 }
+	MW { mass =  0.00000	charge =-1.1128	vdw_type = 0 }
+}
+
+
+PairInteractions {
+	item0 { vdw_types = 1,1	func = "lj"	params	= 3.0797886863861844e-03, 3.0601039981908442e-06	}
+	// c6 c12 corresponds to epsilon = 0.774900 [kJ/mol], sigma = 0.315890 [nm]
+}
+
+Modifiers{
+}
+	
+Molecules {
+// each item is a molecule
+	Water {
+		//	0	1	2	3
+		Atoms =	"OW",	"HW",	"HW",	"MW"
+		VirtualSites {
+			item00 { func = "vsite3"	atom = 3	depds = 0,1,2	params = 0.13193828,0.13193828 }
+		}
+		Constraints {
+			cstOH1  { atoms = 0,1	dist = 0.09572 }
+			cstOH2  { atoms = 0,2	dist = 0.09572 }
+			cstH1H2 { atoms = 1,2	dist = 0.15139 }
+		}
+		Exclusions {
+			item00 { atom = 0	excls = 1,2,3 }
+			item01 { atom = 1	excls = 0,2,3 }
+			item02 { atom = 2	excls = 0,1,3 }
+			item03 { atom = 3	excls = 0,1,2 }
+		}
+	}
+}
+
+System {
+// number of molecules and the corresponding numbers should match
+	Molecules =	"Water"
+	numbers	=	432
+}
+
+Mace {
+     count	{command = "CountParticle"	set  = "atom_set"							}
+     coordnation{command = "CoordinationNumber"	input = "xyz"		nlist = "nlist"	rmin = 0.31	rmax = 0.36	}
+     q4		{command = "Steinhardt" l=4	input = "xyz"		nlist = "nlist"	rmin = 0.31	rmax = 0.36	}
+     q6		{command = "Steinhardt"	l=6	input = "xyz"		nlist = "nlist"	rmin = 0.31	rmax = 0.36	}
+     sq_100	{command = "StructureFactor"	input = "xyz"		q = 0,16.158,0			set="atom_set"	} //  | q | = 16.158 nm^-1
+     sq_002	{command = "StructureFactor"	input = "xyz"		q = 0,0,17.217			set="atom_set"	} //  | q | = 17.217 nm^-1
+     sq_101	{command = "StructureFactor"	input = "xyz"		q = 0,16.158,8.609		set="atom_set"	}  // | q | = 18.31 nm^-1
+     sq_110	{command = "StructureFactor"	input = "xyz"		q = 27.99,0,0			set="atom_set"	}  // | q | = 27.99 nm^-1
+     sum_coord	{command = "Summation"		input = "coordnation"	set="atom_set" 					}
+     sum_q4	{command = "Summation"		input = "q4"		set="atom_set" 					}
+     sum_q6	{command = "Summation"		input = "q6"		set="atom_set" 					}
+     sum_002	{command = "Summation"		input = "sq_002"	set="atom_set" 					}
+     sum_100	{command = "Summation"		input = "sq_100"	set="atom_set" 					}
+     sum_101	{command = "Summation"		input = "sq_101"	set="atom_set" 					}
+     sum_110	{command = "Summation"		input = "sq_110"	set="atom_set" 					}
+     l2_q4	{command = "L2Norm"		input = "sum_q4"	coeff=1,1,2,2,2,2,2,2,2,2			}
+     l2_q6	{command = "L2Norm"		input = "sum_q6"	coeff=1,1,2,2,2,2,2,2,2,2,2,2,2,2		}
+     l2_100	{command = "L2Norm"		input = "sum_100"	coeff=1,1					}
+     l2_002	{command = "L2Norm"		input = "sum_002"	coeff=1,1					}
+     l2_101	{command = "L2Norm"		input = "sum_101"	coeff=1,1					}
+     l2_110	{command = "L2Norm"		input = "sum_110"	coeff=1,1					}
+     l2_sqxy_1	{command = "L2Norm"		input = "sum_100","sum_101"	coeff=1,1,1,1				}
+     l2_sqxy	{command = "Scale"		input = "l2_sqxy_1"	k = 0.5						}
+     l2_sqz	{command = "L2Norm"		input = "sum_002"	coeff=1,1					}
+     norm_q4	{command = "Divide"		input = "l2_q4","sum_coord"						}
+     norm_q6	{command = "Divide"		input = "l2_q6","sum_coord"						}
+     norm_100	{command = "Divide"		input = "l2_100","count"						}	
+     norm_002	{command = "Divide"		input = "l2_002","count"						}	
+     norm_101	{command = "Divide"		input = "l2_101","count"						}	
+     norm_110	{command = "Divide"		input = "l2_110","count"						}	
+     norm_sqxy	{command = "Divide"		input = "l2_sqxy","count"						}
+     norm_sqz	{command = "Divide"		input = "l2_sqz","count"						}
+    res_q6	{command = "HarmonicRestraint"	input = "norm_q6"	k = 1e6		center = .4	bias = TRUE	}
+    res_sqxy	{command = "HarmonicRestraint"	input = "norm_sqxy"	k = 1e6		center = .4	bias = TRUE	}
+    res_sqz	{command = "HarmonicRestraint"	input = "norm_sqz"	k = 1e6		center = .4	bias = TRUE	}
+    print	{command = "Print"		input = "norm_q6","norm_sqxy","norm_sqz","norm_q4","norm_100","norm_002","norm_101","norm_110","res_q6","res_sqxy","res_sqz"	file = "mace.out"	every = 1	}
+}
