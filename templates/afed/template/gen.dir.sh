@@ -37,6 +37,7 @@ echo "# using top file tops/top.input.$system_top_style"
 cp -a $system_seed_dir $out_dir
 rm -f $out_dir/top.input
 cp tops/top.input.$system_top_style $out_dir/top.input
+cp parameters.sh $out_dir
 cd $out_dir
 
 # link conf
