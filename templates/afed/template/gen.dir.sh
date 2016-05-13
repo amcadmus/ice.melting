@@ -7,6 +7,13 @@ if test ! -d $system_seed_dir; then
     echo "no dir $system_seed_dir"
     exit
 fi
+if test ! -f tops/top.input.$system_top_style; then
+    echo "no top file tops/top.input.$system_top_style, do nothing."
+    top_files=`ls tops | grep ^top`
+    echo "available top files are"
+    echo "$top_files"
+    exit
+fi
 
 copy_x=`echo $system_conf_copies | cut -d ',' -f 1`
 copy_y=`echo $system_conf_copies | cut -d ',' -f 2`
@@ -25,7 +32,11 @@ fi
 traj_n_freq=`echo "($md_traj_freq + 0.5 * $md_dt) / $md_dt " | bc`
 ener_n_freq=`echo "($md_ener_freq + 0.5 * $md_dt) / $md_dt " | bc`
 
+# copy dir
+echo "# using top file tops/top.input.$system_top_style"
 cp -a $system_seed_dir $out_dir
+rm -f $out_dir/top.input
+cp tops/top.input.$system_top_style $out_dir/top.input
 cd $out_dir
 
 # link conf

@@ -2,6 +2,7 @@
 system_seed_dir=md
 system_start_conf=conf.sol.gro	# in $system_seed_dir
 system_conf_copies=2,2,2
+system_top_style=002
 
 # run time control
 md_time=100000
