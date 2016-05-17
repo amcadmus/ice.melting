@@ -39,6 +39,7 @@ cp -a $system_seed_dir $out_dir
 rm -f $out_dir/top.input
 cp tops/top.input.$system_top_style $out_dir/top.input
 cp parameters.sh $out_dir
+cp run.sh env.sh $out_dir
 cd $out_dir
 
 # link conf
@@ -67,6 +68,7 @@ $gmx_genconf -nbox $copy_x $copy_y $copy_z -f ../$system_start_conf -o conf.gro 
 gmx_natom=`grep SOL topol.top | awk '{print $2}'`
 gmx_natom=`echo "$gmx_natom * $copy_x * $copy_y * $copy_z" | bc`
 sed -i "s/SOL.*[0-9]*/SOL $gmx_natom/g" topol.top
+$gmx_grompp &> /dev/null
 
 
 
