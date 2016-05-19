@@ -1,0 +1,52 @@
+MDParameters {
+	input_conf	= "conf.gro"
+	conf_copies	= 1,1,1
+	energy_out	= "energy.out"
+	unit		= ""
+
+	end_time	= 100000
+	time_step	= 0.002
+
+	rlist		= 1.0
+	rvdw		= 0.9
+	rele		= 0.9
+
+	ele_algor_name	= "spme"
+	ewald_alpha	= 3.5
+	spme_order	= 4
+	spme_f_spacing	= 0.12
+	spme_parallel_mode = "homo"
+	spme_p2m_proc_ratio = 3
+
+	nlist_freq	= 10
+	energy_freq	= 100
+
+	rand_seed	= 0
+
+	thermostat	= "langevin"
+	temperature	= 252.1
+	tau_t		= 0.2
+	barostat        = "langevin"
+	barostat_mode   = "isotropic"
+	pressure        = 1.0
+	tau_p           = 1.0
+	compressibility = 4.5e-05
+
+	ghost_cells	= 2,2,2
+}
+
+OutputControl{
+	restart_freq			= 100000	// time frequency of restarting. unit: ps
+	restart_write_dirname		= "restart"	// directory for restarting files
+	javis_dump_freq			= 1000		// time frequency of javis dump. unit: ps
+	javis_dump_dirname		= "viz"		// javis dump directory name
+	javis_number_procs_per_file	= 24
+	write_x				= TRUE
+	write_v				= TRUE
+	write_f				= FALSE
+}
+
+Sets {
+     atom_set	{command = "IndexSet"		atom_index = "0" 				}
+     nlist	{command = "AtomPairList"	sets = "atom_set","atom_set"	rlist = 0.56	}
+}
