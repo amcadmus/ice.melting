@@ -15,8 +15,8 @@ MDParameters {
 	ewald_alpha	= 3.5
 	spme_order	= 4
 	spme_f_spacing	= 0.12
-	spme_parallel_mode = "homo"
-	spme_p2m_proc_ratio = 3
+	spme_parallel_mode = "hetero"
+	spme_p2m_proc_ratio = 5
 
 	nlist_freq	= 10
 	energy_freq	= 100
