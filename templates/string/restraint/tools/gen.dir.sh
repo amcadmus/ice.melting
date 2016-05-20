@@ -26,20 +26,22 @@ if test $# -ge 1; then
 	echo "no init folder $init_folder, do nothing"
 	exit 1
     fi
-    if test ! -f $init_folder/tag_finished; then
-	echo "simulation of $init_folder/ is not finished, do nothing"
-	exit 1
-    fi
-    if test ! -f $init_folder/out.gro; then
-	echo "no last conf $init_folder/out.gro, try to generate one"
-	cd $init_folder
-	$tools_dir/last.conf.sh
-	cd $cwd
-    fi
+    # if test ! -f $init_folder/tag_finished; then
+    # 	echo "simulation of $init_folder/ is not finished, do nothing"
+    # 	exit 1
+    # fi
+    # if test ! -f $init_folder/out.gro; then
+    # 	echo "no last conf $init_folder/out.gro, try to generate one"
+    # 	cd $init_folder
+    # 	$tools_dir/last.conf.sh
+    # 	cd $cwd
+    # fi
     cd $init_folder
     init_folder=`pwd`
     cd $cwd
-    system_start_conf=$init_folder/out.gro	
+    system_start_conf=$init_folder/out.gro
+    system_template_conf=$cwd/$system_seed_dir/conf.${system_start_state}.gro
+    system_template_copies=$system_conf_copies
     system_conf_copies=1,1,1			# ncopy reset if start from finished trajs
     revise_top=1
 else
@@ -48,17 +50,22 @@ else
     init_folder=`pwd`
     cd $cwd
     system_start_conf=$init_folder/conf.${system_start_state}.gro	# in $system_seed_dir
+    system_template_conf=$cwd/$system_seed_dir/conf.${system_start_state}.gro
+    system_template_copies=$system_conf_copies
     revise_top=0
 fi
 
 # copy and output freq
-copy_x=`echo $system_conf_copies | cut -d ',' -f 1`
-copy_y=`echo $system_conf_copies | cut -d ',' -f 2`
-copy_z=`echo $system_conf_copies | cut -d ',' -f 3`
+conf_copy_x=`echo $system_conf_copies | cut -d ',' -f 1`
+conf_copy_y=`echo $system_conf_copies | cut -d ',' -f 2`
+conf_copy_z=`echo $system_conf_copies | cut -d ',' -f 3`
+copy_x=`echo $system_template_copies | cut -d ',' -f 1`
+copy_y=`echo $system_template_copies | cut -d ',' -f 2`
+copy_z=`echo $system_template_copies | cut -d ',' -f 3`
 copy_x=`printf %02d $copy_x`
 copy_y=`printf %02d $copy_y`
 copy_z=`printf %02d $copy_z`
-natom=`wc -l $system_start_conf | awk '{print $1}' `
+natom=`wc -l $system_template_conf | awk '{print $1}' `
 natom=`echo "($natom - 3) / 4 * $copy_x * $copy_y * $copy_z" | bc`
 natom=`printf %07d $natom`
 traj_n_freq=`echo "($md_traj_freq + 0.5 * $md_dt) / $md_dt " | bc`
@@ -99,13 +106,14 @@ rm -f $out_dir/top.input
 cp $top_file $out_dir/top.input
 cp parameters.sh $out_dir
 cp env.sh $out_dir
+echo "$init_folder/" > $out_dir/job_dep
 cd $out_dir
 
 # prepare conf
 ln -s $system_start_conf conf.gro
 
 # prepare ctrl.input (md parameters)
-sed -e "s/\(conf_copies.*=\).*/\1 $copy_x,$copy_y,$copy_z/g" ctrl.input |\
+sed -e "s/\(conf_copies.*=\).*/\1 $conf_copy_x,$conf_copy_y,$conf_copy_z/g" ctrl.input |\
 sed -e "s/\(rand_seed.*=\).*/\1 $md_rand_seed/g" |\
 sed -e "s/\(end_time.*=\).*/\1 $md_time/g" |\
 sed -e "s/\(time_step.*=\).*/\1 $md_dt/g" |\
@@ -125,13 +133,12 @@ do
 done
 sed -i "s/K_VALUE/$res_k/g" top.input
 if [ $revise_top -eq 1 ] ; then
-    echo $natom
     sed -i "/numbers/s/=.*/= $natom/g" top.input
 fi
 
 # update gromacs tools
 cd gmx.tool
-$gmx_genconf -nbox $copy_x $copy_y $copy_z -f $system_start_conf -o conf.gro &> /dev/null
+$gmx_genconf -nbox $copy_x $copy_y $copy_z -f $system_template_conf -o conf.gro &> /dev/null
 gmx_natom=`grep SOL topol.top | awk '{print $2}'`
 gmx_natom=`echo "$gmx_natom * $copy_x * $copy_y * $copy_z" | bc`
 sed -i "s/SOL.*[0-9]*/SOL $gmx_natom/g" topol.top
