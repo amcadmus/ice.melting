@@ -4,6 +4,11 @@ source env.sh
 source parameters.sh
 tools_dir=`cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd`
 
+dep_job_id=""
+if test $# -ge 1; then
+    dep_job_id=$1
+fi
+
 nnode=`echo "$numb_proc / $numb_proc_per_node" | bc`
 rest_proc=`echo "$numb_proc - $nnode * $numb_proc_per_node" | bc `
 if [ $rest_proc -gt 0 ]; then
@@ -20,6 +25,9 @@ echo "#PBS -N moasp"				>> $batch_sub
 echo "#PBS -q $batch_queue"			>> $batch_sub
 echo "#PBS -l nodes=$nnode:ppn=$numb_proc_per_node"	 >> $batch_sub
 echo "#PBS -l walltime=$job_hour:$job_min:00"	>> $batch_sub
+if [ ${#dep_job_id} -ne 0 ]; then
+    echo "#PBS -W depend=afterok:$dep_job_id"	>> $batch_sub
+fi
 echo "#PBS -j oe"				>> $batch_sub
 echo ""						>> $batch_sub
 echo 'NP=`cat $PBS_NODEFILE | wc -l`'		>> $batch_sub

@@ -46,6 +46,7 @@ class StringForce (object) :
         step = 0
         self.generate_string_dir (step)
         self.generate_string_node_dir (step, string)
+        self.submit_string (step, string)
 
     def submit_string (self,
                        step,
@@ -53,9 +54,8 @@ class StringForce (object) :
                        ) :
         string_name = self.mk_string_name (step)
         if False == os.path.exists (string_name) :
-            Logger.error ("no string dir " + string_name + " should be generated before submitting")
-            sys.exit(1)
-            
+            raise RuntimeError ("no string dir " + string_name + " should be generated before submitting")
+        os.chdir (string_name)
         
         
     def generate_string_dir (self,
@@ -67,8 +67,7 @@ class StringForce (object) :
             ret = Popen(["cp",'-a',self.string_template,string_name], stdout=PIPE, stderr=PIPE)
             stdout, stderr = ret.communicate()
             if ret.returncode != 0 :
-                Logger.error ("cannot copy template dir to " + string_name)
-                sys.exit (1)
+                raise RuntimeError ("cannot copy template dir to " + string_name)
         return string_name
     
     def generate_string_node_dir (self,
