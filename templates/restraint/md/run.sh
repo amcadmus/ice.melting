@@ -5,7 +5,7 @@ HEAD="==run_info=="
 if [ -f tag_finished ]; then
     echo "$HEAD finished job, do nothing"
     echo "$HEAD if want to start anyway, remove tag: tag_finished"
-    exit
+    exit 1
 fi
 
 source env.sh
@@ -17,7 +17,7 @@ echo "$HEAD ipp with command $command"
 $command
 if [ $? -ne 0 ]; then
     echo "failed to tun $moasp_ipp, exit"
-    exit
+    exit 1
 fi
 
 # md run

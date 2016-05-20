@@ -31,10 +31,10 @@ echo 'echo np is $NP'				>> $batch_sub
 echo ""						>> $batch_sub
 echo 'cd $PBS_O_WORKDIR'			>> $batch_sub
 echo "$moasp_bin_dir/$moasp_ipp -n \$NP"	>> $batch_sub
-echo 'if [ $? -ne 0 ]; then exit; fi'		>> $batch_sub
+echo 'if [ $? -ne 0 ]; then exit 1; fi'		>> $batch_sub
 echo ""						>> $batch_sub
 echo "$mpirun_command -genv I_MPI_DEVICE rdma -hostfile \$PBS_NODEFILE -n \$NP $moasp_bin_dir/$moasp_run -v &> log" >> $batch_sub
-echo 'if [ $? -ne 0 ]; then exit; fi'		>> $batch_sub
+echo 'if [ $? -ne 0 ]; then exit 1; fi'		>> $batch_sub
 echo ""						>> $batch_sub
 echo "$tools_dir/last.conf.sh"			>> $batch_sub
 echo 'if [ $? -eq 0 ]; then touch tag_finished; fi' >> $batch_sub

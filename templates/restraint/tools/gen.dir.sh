@@ -11,24 +11,24 @@ rm -f $log
 
 if test ! -d $system_seed_dir; then
     echo "no dir $system_seed_dir"
-    exit
+    exit 1
 fi
 if test ! -f tops/top.input.$system_top_style; then
     echo "no top file tops/top.input.$system_top_style, do nothing."
     top_files=`ls tops | grep ^top`
     echo "available top files are"
     echo "$top_files"
-    exit
+    exit 1
 fi
 if test $# -ge 1; then
     init_folder=$1
     if test ! -d $init_folder; then
 	echo "no init folder $init_folder, do nothing"
-	exit
+	exit 1
     fi
     if test ! -f $init_folder/tag_finished; then
 	echo "simulation of $init_folder/ is not finished, do nothing"
-	exit
+	exit 1
     fi
     if test ! -f $init_folder/out.gro; then
 	echo "no last conf $init_folder/out.gro, try to generate one"
@@ -72,7 +72,7 @@ if test $numb_centers -ne $numb_res; then
     echo "find $numb_res in top while find $numb_centers restraint center, inconsistency, do nothing."
     cd ..
     rm -fr $out_dir
-    exit
+    exit 1
 fi
 res_name=""
 for ii in `seq 1 $numb_centers`
@@ -87,7 +87,7 @@ out_dir=${dir_prefix}${system_start_state}.${natom}$res_name
 # make output dir
 if test -d $out_dir; then
     echo "existing dir $out_dir, do nothing"
-    exit
+    exit 1
 fi
 # copy dir
 echo "# generate dir $out_dir"			>> $log
@@ -141,7 +141,7 @@ cd ..
 # mk jobs script
 if [ ! -f $batch_sub ]; then
     echo "cannot find `pwd`/$batch_sub, do nothing, exit"
-    exit
+    exit 1
 fi
 $tools_dir/mk.batch.sub.sh
 
