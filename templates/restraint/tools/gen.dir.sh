@@ -98,7 +98,7 @@ rm -f $out_dir/conf.*.gro
 rm -f $out_dir/top.input
 cp $top_file $out_dir/top.input
 cp parameters.sh $out_dir
-cp tools/run.sh env.sh $out_dir
+cp env.sh $out_dir
 cd $out_dir
 
 # prepare conf
@@ -136,6 +136,14 @@ gmx_natom=`grep SOL topol.top | awk '{print $2}'`
 gmx_natom=`echo "$gmx_natom * $copy_x * $copy_y * $copy_z" | bc`
 sed -i "s/SOL.*[0-9]*/SOL $gmx_natom/g" topol.top
 $gmx_grompp &> /dev/null
+cd ..
+
+# mk jobs script
+if [ ! -f $batch_sub ]; then
+    echo "cannot find `pwd`/$batch_sub, do nothing, exit"
+    exit
+fi
+$tools_dir/mk.batch.sub.sh
 
 cd $cwd
 cat $log

@@ -1,8 +1,5 @@
 #!/bin/bash
 
-source parameters.sh
-source env.sh
-
 target_dir="."
 if [ $# -ge 1 ]; then
     target_dir=$1
@@ -14,7 +11,10 @@ fi
 
 tools_dir=`cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd`
 cwd=`pwd`
+
 cd $target_dir
+source env.sh
+source parameters.sh
 
 numb_res=`grep HarmonicRestraint top.input | wc -l`
 numb_centers=`echo $res_centers | awk -F ',' '{print NF}'`
@@ -30,7 +30,7 @@ do
     key=`echo $param_line | sed 's/.*input =\(.*\)k.*/\1/g' | awk -F'"' '{print $2}'`
     center=`echo $param_line | sed 's/.*center =\(.*\)bias.*/\1/g'`
     kk=`echo $param_line | sed 's/.*k =\(.*\)center.*/\1/g'`
-    col=`grep Print top.input | sed 's/.*input =\(.*\)file.*/\1/g' | sed 's/\"//g' | sed 's/,/\n/g' | grep -n $key | awk -F':' '{print $1}'`
+    col=`grep Print top.input | sed 's/.*input =\(.*\)file.*/\1/g' | sed 's/\"//g' | sed 's/,/\n/g' | grep -n $key | awk -F ':' '{print $1}'`
     col=`echo "$col+1" | bc`   
     echo "# $key $col $center $kk"
     awk "{print - (\$$col - $center) * $kk}" mace.out > tmp.out

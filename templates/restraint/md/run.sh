@@ -12,7 +12,7 @@ source env.sh
 export OMP_NUM_THREADS=1
 
 # ipp
-command="$moasp_bin_dir/$moasp_ipp -n $num_proc"
+command="$moasp_bin_dir/$moasp_ipp -n $numb_proc"
 echo "$HEAD ipp with command $command"
 $command
 if [ $? -ne 0 ]; then
@@ -21,7 +21,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # md run
-command="$mpirun_command -n $num_proc $moasp_bin_dir/$moasp_run -v &> /dev/null"
+command="$mpirun_command -n $numb_proc $moasp_bin_dir/$moasp_run -v &> /dev/null"
 echo "$HEAD run with command $command"
 $command
 if [ $? -eq 0 ]; then

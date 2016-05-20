@@ -1,0 +1,27 @@
+#PBS -S /bin/bash
+#PBS -N moasp
+#PBS -q batch1
+#PBS -l nodes=1:ppn=24
+#PBS -l walltime=00:20:00
+#PBS -j oe
+NP=`cat $PBS_NODEFILE | wc -l`
+NN=`cat $PBS_NODEFILE | sort | uniq | tee /tmp/nodes.$$ | wc -l`
+cat $PBS_NODEFILE > /tmp/nodefile.$$
+cat $PBS_NODEFILE | sort | uniq > /tmp/nodefile.$$
+
+EXEC=/home/wang_han/local/bin/moasp
+EXEC=/home/wang_han/tmp/moasp/build/src/app/moasp
+
+source /opt/intel/composer_xe_2015/bin/compilervars.sh intel64
+#source /opt/intel/composer_xe_2013-new/bin/compilervars.sh intel64
+source /opt/intel/impi_latest/bin64/mpivars.sh
+export JASMIN_NUM_SMP_THREADS=12
+export JASMIN_NUM_DSM_THREADS=2
+
+echo "#################### contents in node file ##########################"
+cat /tmp/nodefile.$$
+echo "#################### contents in node file ##########################"
+
+cd $PBS_O_WORKDIR
+echo "mpirun -genv I_MPI_DEVICE rdma -hostfile /tmp/nodefile.$$  -n $NN -ppn 1 $EXEC > log"
+mpirun -genv I_MPI_DEVICE rdma -hostfile /tmp/nodefile.$$  -n $NN -ppn 1 $EXEC > log
