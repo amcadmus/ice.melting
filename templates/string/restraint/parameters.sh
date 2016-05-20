@@ -2,7 +2,7 @@ dir_prefix=""
 
 # system conf setting (should not be changed if build dir with dependency)
 system_seed_dir=md
-system_start_state=liq
+system_start_state=sol
 system_conf_copies=2,2,2
 
 # system top setting

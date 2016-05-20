@@ -89,12 +89,19 @@ do
     center_value=`printf %.04f $center_value`
     res_name=$res_name.${key}$'-'${center_value}
 done
-out_dir=${dir_prefix}${system_start_state}.${natom}$res_name
+
+# out dir name
+if [ ${#dir_prefix} -gt 0 ]; then
+    my_dir_prefix=${dir_prefix}'.'
+else
+    my_dir_prefix=${dir_prefix}
+fi
+out_dir=${my_dir_prefix}${system_start_state}.${natom}$res_name
 
 # make output dir
 if test -d $out_dir; then
     echo "existing dir $out_dir, do nothing"
-    exit 1
+    exit 10
 fi
 # copy dir
 echo "# generate dir $out_dir"			>> $log
