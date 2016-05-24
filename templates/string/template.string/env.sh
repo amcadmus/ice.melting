@@ -6,13 +6,14 @@ source $HOME/compiler_vars.sh
 # batch system
 batch_system=PBS
 batch_sub=$batch_system.sub
-batch_queue=batch1
+batch_queue=batch2
 job_hour=0
-job_min=20
+job_min=50
+cput_hour=4
 
 # mpi
 mpirun_command=mpirun
-numb_proc=12
+numb_proc=24
 numb_proc_per_node=24
 
 # moasp

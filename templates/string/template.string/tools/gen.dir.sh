@@ -33,14 +33,11 @@ if test $# -ge 2; then
 	echo "no init folder $init_folder, do nothing"
 	exit 1
     fi
-    cd $init_folder
-    init_folder=`pwd`
-    cd $cwd
+    system_ref_conf=confs/$system_start_conf
     system_start_conf=$init_folder/out.gro
-    system_ref_conf=$init_folder/conf.gro
 else
     cd $cwd
-    system_start_conf=`pwd`/confs/$system_start_conf
+    system_start_conf=confs/$system_start_conf
     system_ref_conf=$system_start_conf
     if test ! -f $system_start_conf; then
 	echo no file $system_start_conf
@@ -93,7 +90,7 @@ fi
 cd $out_dir
 
 # prepare conf
-ln -s $system_start_conf conf.gro
+ln -s ../$system_start_conf conf.gro
 
 # prepare ctrl.input (md parameters)
 sed -e "s/\(conf_copies.*=\).*/\1 1,1,1/g" ctrl.input |\
@@ -119,7 +116,7 @@ sed -i "/numbers/s/=.*/= $nmol/g" top.input
 
 # update gromacs tools
 cd gmx.tool
-ln -s $system_ref_conf ./conf.gro
+ln -s ../../$system_ref_conf ./conf.gro
 sed -i "s/SOL.*[0-9]*/SOL $nmol/g" topol.top
 $gmx_grompp &> /dev/null
 cd ..

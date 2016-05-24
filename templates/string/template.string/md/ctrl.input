@@ -19,7 +19,7 @@ MDParameters {
 	spme_p2m_proc_ratio = 5
 
 	nlist_freq	= 10
-	energy_freq	= 100
+	energy_freq	= 50
 
 	rand_seed	= 0
 

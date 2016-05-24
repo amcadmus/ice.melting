@@ -28,6 +28,7 @@ echo "#PBS -l walltime=$job_hour:$job_min:00"	>> $batch_sub
 if [ ${#dep_job_id} -ne 0 ]; then
     echo "#PBS -W depend=afterok:$dep_job_id"	>> $batch_sub
 fi
+echo "#PBS -l cput=$cput_hour:00:00"		>> $batch_sub
 echo "#PBS -j oe"				>> $batch_sub
 echo ""						>> $batch_sub
 echo 'NP=`cat $PBS_NODEFILE | wc -l`'		>> $batch_sub
