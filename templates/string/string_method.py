@@ -144,6 +144,6 @@ if __name__ == "__main__":
     numb_node   = 21
     string = init_linear_string (node_start, node_end, numb_node)
     sf = StringForce ("template.string")
-    string = compute_string (sf.compute, string, 1e-5, 300, 1)
+    string = compute_string (sf.compute, string, 2e-6, 300, 1)
     print ("result string:")
     print (string)

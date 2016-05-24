@@ -33,7 +33,7 @@ do
     col=`grep Print top.input | sed 's/.*input =\(.*\)file.*/\1/g' | sed 's/\"//g' | sed 's/,/\n/g' | grep -n $key | awk -F ':' '{print $1}'`
     col=`echo "$col+1" | bc`   
     echo "# $key $col $center $kk"
-    awk "{print - (\$$col - $center) * $kk}" mace.out > tmp.out
+    awk "{print (\$$col - $center) * $kk}" mace.out > tmp.out
     force=`$moasp_bin_dir/$moasp_avg -f tmp.out -t .5 | grep -v \#  | awk '{print $1}'`
     if [ $? -ne 0 ]; then echo "unsuccessful msp_avg, exit"; exit 1; fi
     line="$line $force"
