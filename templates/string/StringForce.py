@@ -15,7 +15,7 @@ import datetime
 
 class StringForce (object) :
     def __init__ (self,
-                  string_template
+                  string_template 
                   ) :
         self.base_dir = os.getcwd() + '/'
         self.string_template = string_template
@@ -88,6 +88,7 @@ class StringForce (object) :
         string_name = self.mk_string_name (step)
         if False == os.path.exists (string_name) :
             raise RuntimeError ("no string dir " + string_name + " should be generated before submitting")
+        string = np.loadtxt (string_name + "/string.out")
         os.chdir (string_name)
         string_dir = os.getcwd() + "/"
         job_list = []
@@ -97,7 +98,7 @@ class StringForce (object) :
             os.chdir (node_name)
             node_dir = os.getcwd() + "/"
             dep_idx = self.mk_dep_idx (node_idx)
-            if dep_idx < 0 :
+            if step != 0 or dep_idx < 0 :
                 sp.check_call ([string_dir+self.cmd_job_scpt])
             else :
                 dep_job_id = job_id_list[dep_idx]
