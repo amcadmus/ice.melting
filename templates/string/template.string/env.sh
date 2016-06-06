@@ -6,7 +6,7 @@ source $HOME/compiler_vars.sh
 # batch system
 batch_system=PBS
 batch_sub=$batch_system.sub
-batch_queue=batch2
+batch_queue=batch1
 job_hour=0
 job_min=50
 cput_hour=4

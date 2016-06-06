@@ -15,14 +15,15 @@ import datetime
 
 class StringForce (object) :
     def __init__ (self,
-                  string_template 
+                  string_template  = "template.string",
+                  dep_sec = 4,
                   ) :
         self.base_dir = os.getcwd() + '/'
         self.string_template = string_template
         self.cmd_gen_dir = "tools/gen.dir.sh"
         self.cmd_job_scpt = "tools/mk.batch.sub.sh"
         self.cmd_stat_scpt = "tools/cmpt.f.sh"
-        self.dep_sec_size = 4
+        self.dep_sec_size = dep_sec
         
         if False == os.path.exists (self.string_template) :
             Logger.error ("cannot find string template " + self.string_template)
@@ -84,6 +85,7 @@ class StringForce (object) :
     
     def submit_string (self,
                        step,
+                       all_at_once = False,
                        ) :
         string_name = self.mk_string_name (step)
         if False == os.path.exists (string_name) :
@@ -98,7 +100,7 @@ class StringForce (object) :
             os.chdir (node_name)
             node_dir = os.getcwd() + "/"
             dep_idx = self.mk_dep_idx (node_idx)
-            if step != 0 or dep_idx < 0 :
+            if (all_at_once) or (step != 0 or dep_idx < 0) :
                 sp.check_call ([string_dir+self.cmd_job_scpt])
             else :
                 dep_job_id = job_id_list[dep_idx]
@@ -124,7 +126,8 @@ class StringForce (object) :
                 raise RuntimeError ("cannot copy template dir to " + string_name)
         np.savetxt (string_name + "/string.out", string)
         self.generate_string_node_dir (step, string)
-    
+
+        
     def generate_string_node_dir (self,
                                   step,
                                   string
