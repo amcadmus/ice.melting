@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 # to be converted to python3
 
+import os
+import argparse
 import numpy as np
+import subprocess as sp
 from scipy.interpolate import interp1d
 from StringForce import StringForce
+from subprocess import Popen, PIPE
 
 def test_compute_force (xx):
     yy = np.zeros (np.size(xx))
@@ -137,13 +141,29 @@ def compute_string (compute_force,              # function for computing the for
 #    print incr_hist
     conv_file.close ()
     return string    
+
+def main ():
+    parser = argparse.ArgumentParser(
+        description="*** Initialize a string. ***")
+
+    name_start = "string.000000"
+    parser.add_argument('-s', '--start', default = name_start,
+                        help='Starting string')
+    parser.add_argument('-c', '--continue', action = "store_false",
+                        help='If continue the string simulation, default is false')
+
+    args = parser.parse_args()
+
+    if args.start != name_start :
+        if os.path.exists (name_start) :
+            raise RuntimeError ("Existing folder " +
+                                name_start +
+                                ", which has not been assigned as string name, should be wrong.")
+        sp.check_call ("ln -s " + args.start + " " + name_start, shell = True)
+
+    string = np.loadtxt (name_start + "/string.out")
+    sf = StringForce ("template.string")    
+    string = compute_string (sf.compute, string, 2e-6, 300, 1)
     
 if __name__ == "__main__":
-    node_start  = np.array([0.410,0.464,0.632])
-    node_end    = np.array([0.012,0.028,0.021])
-    numb_node   = 21
-    string = init_linear_string (node_start, node_end, numb_node)
-    sf = StringForce ("template.string")
-    string = compute_string (sf.compute, string, 2e-6, 300, 1)
-    print ("result string:")
-    print (string)
+    main ()

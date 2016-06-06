@@ -118,11 +118,12 @@ class PBSJob (BatchJob) :
         else :
             return JobStatus.unknown        
 
-# if __name__ == "__main__" :
-#     job = PBSJob ("./test", "cu01.sleep")
-#     job.submit ()
-#     print ("submit done")
-#     stat = job.check_status ()
-#     print ("check done")
-#     print (stat)
+if __name__ == "__main__" :
+    cwd = os.getcwd()
+    job = PBSJob (cwd + "/test", "cu01.sleep")
+    job.submit ()
+    print ("submit done")
+    stat = job.check_status ()
+    print ("check done")
+    print (stat)
     
