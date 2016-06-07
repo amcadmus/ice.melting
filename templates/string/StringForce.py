@@ -21,6 +21,7 @@ class StringForce (object) :
         self.base_dir = os.getcwd() + '/'
         self.string_template = string_template
         self.cmd_gen_dir = "tools/gen.dir.sh"
+        self.cmd_update_dir = "tools/update.sh"
         self.cmd_job_scpt = "tools/mk.batch.sub.sh"
         self.cmd_stat_scpt = "tools/cmpt.f.sh"
         self.dep_sec_size = dep_sec
@@ -45,8 +46,16 @@ class StringForce (object) :
         self.generate_string (step, string)
         job = self.submit_string (step)
         self.wait_string (job)
+        self.write_tag (step)
         force = self.statistic_string (step)
         return (force)
+
+    def write_tag (self,
+                   step,
+                   ) :
+        fp = open ("tag_fin_string", "a")
+        fp.write (str(step) + "\n")
+        fp.close ()
 
     def statistic_string (self,
                           step,
@@ -120,7 +129,7 @@ class StringForce (object) :
         os.chdir (self.base_dir)
         string_name = self.mk_string_name (step)
         if False == os.path.exists (string_name) :
-            ret = Popen(["cp",'-a',self.string_template,string_name], stdout=PIPE, stderr=PIPE)
+            ret = Popen(["cp", '-a', self.string_template, string_name], stdout=PIPE, stderr=PIPE)
             stdout, stderr = ret.communicate()
             if ret.returncode != 0 :
                 raise RuntimeError ("cannot copy template dir to " + string_name)
@@ -156,7 +165,8 @@ class StringForce (object) :
                                         ".  error info: " +
                                         str(stderr, encoding='ascii') )
                 if ret.returncode == 10 :
-                    print ("# detected node: " + string_name + "/" + node_name)
+                    print ("# detected node: " + string_name + "/" + node_name + " updated.")
+                    sp.check_call ([self.cmd_update_dir, node_name])
                 else :
                     print ("# generated node: " + string_name + "/" + node_name)
         else :
@@ -176,7 +186,8 @@ class StringForce (object) :
                                         ".  error info: " +
                                         str(stderr, encoding='ascii') )
                 if ret.returncode == 10 :
-                    print ("# detected node: " + string_name + "/" + node_name)
+                    print ("# detected node: " + string_name + "/" + node_name + " updated.")
+                    sp.check_call ([self.cmd_update_dir, node_name])
                 else :
                     print ("# generated node: " + string_name + "/" + node_name)
         os.chdir (self.base_dir)

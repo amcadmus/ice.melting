@@ -143,27 +143,44 @@ def compute_string (compute_force,              # function for computing the for
     return string    
 
 def main ():
+
+    sf = StringForce ("template.string")
+
+    start_step = 0
+    start_name = sf.mk_string_name (start_step)
+
     parser = argparse.ArgumentParser(
         description="*** Initialize a string. ***")
 
-    name_start = "string.000000"
-    parser.add_argument('-s', '--start', default = name_start,
+    parser.add_argument('-s', '--start', default = start_name,
                         help='Starting string')
-    parser.add_argument('-c', '--continue', action = "store_false",
-                        help='If continue the string simulation, default is false')
+    parser.add_argument('-d', '--step', type=float, default = 2e-6,
+                        help='Step size for evolving string')
+    parser.add_argument('-m', '--max-step', type=int, default = 300,
+                        help='Maximum number of steps')
+    parser.add_argument('-t','--md-time', type=int, default=20,
+                        help='Physical time of MD simulation in unit of ps.')
 
     args = parser.parse_args()
 
-    if args.start != name_start :
-        if os.path.exists (name_start) :
-            raise RuntimeError ("Existing folder " +
-                                name_start +
-                                ", which has not been assigned as string name, should be wrong.")
-        sp.check_call ("ln -s " + args.start + " " + name_start, shell = True)
+    sf.replace ("template.string/parameters.sh", "md_time=.*", "md_time=" + str(args.md_time))
 
-    string = np.loadtxt (name_start + "/string.out")
-    sf = StringForce ("template.string")    
-    string = compute_string (sf.compute, string, 2e-6, 300, 1)
+    if os.path.exists ("tag_fin_string") :        
+        fp = open ("tag_fin_string", "r")
+        start_step = int(fp.readlines()[-1])
+        fp.close()
+        print ("# find step " + str(start_step) + ". start from it")
+        start_name = sf.mk_string_name (start_step)        
+
+    if start_step == 0 and args.start != start_name :
+        if os.path.exists (start_name) :
+            raise RuntimeError ("Existing folder " +
+                                start_name +
+                                ", which has not been assigned as string name, should be wrong.")
+        sp.check_call ("ln -s " + args.start + " " + start_name, shell = True)        
+
+    string = np.loadtxt (start_name + "/string.out")
+    string = compute_string (sf.compute, string, args.step, args.max_step, start_step)
     
 if __name__ == "__main__":
     main ()

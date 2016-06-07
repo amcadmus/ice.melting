@@ -65,7 +65,7 @@ def generate_from_source (source_string_dir,
     str_force = StringForce ()
     string_name = str_force.mk_string_name (0)
     if not os.path.isdir(string_name) :        
-        ret = Popen(["cp",'-a',"template.string",string_name], stdout=PIPE, stderr=PIPE)
+        ret = Popen(["cp", '-a', str_force.string_template, string_name], stdout=PIPE, stderr=PIPE)
         stdout, stderr = ret.communicate()
         if ret.returncode != 0 :
             raise RuntimeError ("cannot copy template dir to " + string_name)
@@ -84,6 +84,7 @@ def generate_from_source (source_string_dir,
                 min_val = norm
                 min_posi = jj
         this_node = str_force.mk_node_name (ii)
+        str_force.mk_node_param (string[ii])
         source_node = str_force.mk_node_name (min_posi)
         ret = Popen ([cmd_gen_dir, this_node, source_string_dir+"/"+source_node],  stdout=PIPE, stderr=PIPE)
         stdout, stderr = ret.communicate()
@@ -109,8 +110,8 @@ def main ():
                         help='Method for generating the string. Available methods are: ' + __available_method())
     parser.add_argument('-n', '--numb-nodes', type=int, default = 20,
                         help='Number of nodes on a string.')
-    parser.add_argument('-r', '--run', action = "store_true",
-                        help='Run the simulation.')
+    parser.add_argument('-t','--md-time', type=int, default=20,
+                        help='Physical time of MD simulation in unit of ps.')
 
     lg = parser.add_argument_group ("Linear string")
     lg.add_argument('-b', '--begin', type=float, nargs = '*',
@@ -125,6 +126,8 @@ def main ():
     args = parser.parse_args()
 
     str_force = StringForce ("template.string", 1)
+    str_force.replace ("template.string/parameters.sh", "md_time=.*", "md_time=" + str(args.md_time))
+
     if args.method == "linear" :
         if args.begin == None :
             raise RuntimeError ("Begin of the string is empty")
@@ -141,6 +144,8 @@ def main ():
         abs_source = os.getcwd() + "/" + args.source
         generate_from_source (args.source, string)
         job = str_force.submit_string (0, True)
+    else :
+        raise RuntimeError ("unknow method to generate the string!")
 
     str_force.wait_string (job)
     force = str_force.statistic_string (0)
