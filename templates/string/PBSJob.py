@@ -24,10 +24,9 @@ class PBSJob (BatchJob) :
                 else :
                     return JobStatus.terminated
             else :
-                Logger.error ("status command " + "qstat" + " fails to execute")
-                Logger.error ("erro info: " + str(stderr, encoding='ascii'))
-                Logger.error ("return code: " + str(ret.returncode))
-                sys.exit ()
+                raise RuntimeError ("status command " + "qstat" + " fails to execute\n" + 
+                                    "erro info: " + str(stderr, encoding='ascii') + "\n" +
+                                    "return code: " + str(ret.returncode))
         status_line = str(stdout, encoding='ascii').split ('\n')[-2]
         status_word = status_line.split ()[-2]        
 #        print (status_word)

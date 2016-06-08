@@ -10,7 +10,7 @@ from subprocess import Popen, PIPE
 from scipy.interpolate import interp1d
 
 def __available_method () :
-    LIST = ["linear", "from_existing"]
+    LIST = ["linear", "resample", "resample-reinit"]
     names=""
     for ii in LIST :
         names += ii + ", "
@@ -112,6 +112,8 @@ def main ():
                         help='Number of nodes on a string.')
     parser.add_argument('-t','--md-time', type=int, default=20,
                         help='Physical time of MD simulation in unit of ps.')
+    parser.add_argument('-d','--dep-size', type=int, default=1,
+                        help='Number of nodes that depends on one node.')
 
     lg = parser.add_argument_group ("Linear string")
     lg.add_argument('-b', '--begin', type=float, nargs = '*',
@@ -125,7 +127,7 @@ def main ():
 
     args = parser.parse_args()
 
-    str_force = StringForce ("template.string", 1)
+    str_force = StringForce ("template.string", args.dep_size)
     str_force.replace ("template.string/parameters.sh", "md_time=.*", "md_time=" + str(args.md_time))
 
     if args.method == "linear" :
@@ -137,17 +139,23 @@ def main ():
         print (str(string))    
         str_force.generate_string (0, string)
         job = str_force.submit_string (0, False)
-    elif args.method == "from_existing" :
+    elif args.method == "resample" :
         if args.source == None :
             raise RuntimeError ("No source string")
         string = init_source_string (args.source, args.numb_nodes)
-        abs_source = os.getcwd() + "/" + args.source
         generate_from_source (args.source, string)
         job = str_force.submit_string (0, True)
+    elif args.method == "resample-reinit" :
+        if args.source == None :
+            raise RuntimeError ("No source string")
+        string = init_source_string (args.source, args.numb_nodes)
+        str_force.generate_string (0, string)
+        job = str_force.submit_string (0, False)        
     else :
         raise RuntimeError ("unknow method to generate the string!")
 
     str_force.wait_string (job)
+    str_force.write_tag (0)
     force = str_force.statistic_string (0)
         
 if __name__ == '__main__':
