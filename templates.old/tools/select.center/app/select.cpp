@@ -19,22 +19,201 @@
 namespace po = boost::program_options;
 using namespace std;
 
-inline double
-dist (const double & q4, const double & q6,
-      const double ref_q4, const double ref_q6)
+template <typename TYPE>
+void 
+insert (const vector<vector<TYPE> > & vold,
+	vector<vector<TYPE> > & vnew,
+	const int posii,
+	const int posij)
 {
-  return sqrt ( (q4 - ref_q4) * (q4 - ref_q4) + 
-		(q6 - ref_q6) * (q6 - ref_q6) );
+  for (unsigned ii = 0; ii < vold.size(); ++ii){
+    for (unsigned jj = 0; jj < vold[ii].size(); ++jj){
+      vnew[posii + ii][posij + jj] = vold[ii][jj];
+    }
+  }
+}
+
+template <typename TYPE>
+void 
+insert (const vector<vector<vector<TYPE > > > & vold,
+	vector<vector<vector<TYPE > > > & vnew,
+	const int posii,
+	const int posij,
+	const int posik)
+{
+  for (unsigned ii = 0; ii < vold.size(); ++ii){
+    for (unsigned jj = 0; jj < vold[ii].size(); ++jj){
+      for (unsigned kk = 0; kk < vold[ii][jj].size(); ++kk){
+	vnew[posii + ii][posij + jj][posik + kk] = vold[ii][jj][kk];
+      }
+    }
+  }
+}
+
+
+inline double
+dist (const double & c0, const double & c1, const double ref_c0, const double ref_c1)
+{
+  return sqrt ( (c0 - ref_c0) * (c0 - ref_c0) + 
+		(c1 - ref_c1) * (c1 - ref_c1) );
+}
+
+inline double
+dist (const double & c0, const double & c1, const double & c2, const double ref_c0, const double ref_c1, const double ref_c2)
+{
+  return sqrt ( (c0 - ref_c0) * (c0 - ref_c0) + 
+		(c1 - ref_c1) * (c1 - ref_c1) + 
+		(c2 - ref_c2) * (c2 - ref_c2) );
+}
+
+template <typename TYPE>
+void
+make_matrix (const unsigned nbin_c0, 
+	     const unsigned nbin_c1, 
+	     vector<vector<TYPE> > &  matrix, 
+	     const TYPE default_value = 0)
+{
+  matrix.resize(nbin_c0+1);
+  for (unsigned ii = 0; ii < matrix.size(); ++ii){
+    matrix[ii].resize (nbin_c1 + 1, default_value);
+  }
+}
+
+int 
+compute_idx (const double value,
+	     const double low,
+	     const double bin_size)
+{
+  int shift (0);
+  if (value - low < 0) shift = -1;
+  return int((value - low) / bin_size) + shift;
+}
+
+void process (const vector<double > & time,
+	      const vector<double > & c0,
+	      const vector<double > & c1,
+	      const double bin_size0,
+	      const double bin_size1,
+	      double & low_c0,
+	      double & low_c1,
+	      vector<vector<double > > & hit_time,
+	      vector<vector<double > > & min_dist)
+{
+  if (c0.size() == 0) return;
+  if (c0.size() != c1.size() || c0.size() != time.size()) {
+    cerr << "unmatching c0 and c1 or c0 and time, exit" << endl;
+    exit(1);
+  }
+  low_c0 = int(c0[0] / bin_size0) * bin_size0;
+  low_c1 = int(c1[0] / bin_size1) * bin_size1;
+  unsigned nbin_c0;
+  unsigned nbin_c1;
+  nbin_c0 = 1;
+  nbin_c1 = 1;
+  make_matrix<double> (nbin_c0, nbin_c1, hit_time, -1);
+  make_matrix<double> (nbin_c0, nbin_c1, min_dist, 1e24);
+  
+  for (unsigned ii = 1; ii < c0.size(); ++ii){
+    int idx0 = compute_idx (c0[ii], low_c0, bin_size0);
+    int idx1 = compute_idx (c1[ii], low_c1, bin_size1);
+    if (idx0 < 0 || idx1 < 0 || idx0 >= int(nbin_c0) || idx1 >= int(nbin_c1)){
+      int new_idx0, new_idx1, new_nbin_c0, new_nbin_c1;
+      int posi0, posi1;
+      if (idx0 < 0){
+	new_idx0 = 0;
+	posi0 = -idx0;
+	new_nbin_c0 = nbin_c0 + posi0;
+	low_c0 = low_c0 + idx0 * bin_size0;
+      }
+      else if (idx0 >= int(nbin_c0)){
+	new_idx0 = idx0;
+	posi0 = 0;
+	new_nbin_c0 = new_idx0 + 1;
+      }
+      else {
+	new_idx0 = idx0;
+	posi0 = 0;
+	new_nbin_c0 = nbin_c0;
+      }
+      if (idx1 < 0){
+	new_idx1 = 0;
+	posi1 = -idx1;
+	new_nbin_c1 = nbin_c1 + posi1;
+	low_c1 = low_c1 + idx1 * bin_size1;
+      }
+      else if (idx1 >= int(nbin_c1)){
+	new_idx1 = idx1;
+	posi1 = 0;
+	new_nbin_c1 = new_idx1 + 1;
+      }
+      else {
+	new_idx1 = idx1;
+	posi1 = 0;
+	new_nbin_c1 = nbin_c1;
+      }
+      vector<vector<double > > new_hit_time;
+      vector<vector<double > > new_min_dist;
+      make_matrix<double> (new_nbin_c0, new_nbin_c1, new_hit_time, -1);
+      insert (hit_time, new_hit_time, posi0, posi1);
+      hit_time = new_hit_time;
+      make_matrix<double> (new_nbin_c0, new_nbin_c1, new_min_dist, 1e12);
+      insert (min_dist, new_min_dist, posi0, posi1);
+      min_dist = new_min_dist;
+      idx0 = new_idx0;
+      idx1 = new_idx1;
+      nbin_c0 = new_nbin_c0;
+      nbin_c1 = new_nbin_c1;
+    }
+    double tmp_dist;
+    int pt0, pt1;
+    double ref_c0, ref_c1;
+//////////////////////////////////////////////////
+    pt0 = idx0;
+    pt1 = idx1;
+    ref_c0 = low_c0 + bin_size0 * pt0;
+    ref_c1 = low_c1 + bin_size1 * pt1;
+    tmp_dist = dist (c0[ii], c1[ii], ref_c0, ref_c1);
+    if (tmp_dist < min_dist[pt0][pt1]){
+      min_dist[pt0][pt1] = tmp_dist;
+      hit_time[pt0][pt1] = time[ii];
+    }
+//////////////////////////////////////////////////
+    pt0 = idx0;
+    pt1 = idx1+1;
+    ref_c0 = low_c0 + bin_size0 * pt0;
+    ref_c1 = low_c1 + bin_size1 * pt1;
+    tmp_dist = dist (c0[ii], c1[ii], ref_c0, ref_c1);
+    if (tmp_dist < min_dist[pt0][pt1]){
+      min_dist[pt0][pt1] = tmp_dist;
+      hit_time[pt0][pt1] = time[ii];
+    }
+//////////////////////////////////////////////////
+    pt0 = idx0+1;
+    pt1 = idx1;
+    ref_c0 = low_c0 + bin_size0 * pt0;
+    ref_c1 = low_c1 + bin_size1 * pt1;
+    tmp_dist = dist (c0[ii], c1[ii], ref_c0, ref_c1);
+    if (tmp_dist < min_dist[pt0][pt1]){
+      min_dist[pt0][pt1] = tmp_dist;
+      hit_time[pt0][pt1] = time[ii];
+    }
+//////////////////////////////////////////////////
+    pt0 = idx0+1;
+    pt1 = idx1+1;
+    ref_c0 = low_c0 + bin_size0 * pt0;
+    ref_c1 = low_c1 + bin_size1 * pt1;
+    tmp_dist = dist (c0[ii], c1[ii], ref_c0, ref_c1);
+    if (tmp_dist < min_dist[pt0][pt1]){
+      min_dist[pt0][pt1] = tmp_dist;
+      hit_time[pt0][pt1] = time[ii];
+    }
+  }
 }
 
 int main(int argc, char * argv[])
 {
   std::string ifile, ofile;
-  unsigned cq4, cq6;
-  int min_hit;
-  double binSize;
-  double q4low(0), q4up(1);
-  double q6low(0), q6up(1);
+  string cols, bins;
   double begin, end;
   
   po::options_description desc ("Calculates the average first hitting time in unit of T.\nAllow options");
@@ -43,10 +222,9 @@ int main(int argc, char * argv[])
       ("input", po::value<string > (&ifile)->default_value ("COLVAR"), "the input trajectory of q4 and q6.")
       ("begin", po::value<double > (&begin)->default_value (0), "the start time.")
       ("end", po::value<double > (&end)->default_value (0), "the end time.")
-      ("column-q4", po::value<unsigned > (&cq4)->default_value (2), "the column of Q4.")
-      ("column-q6", po::value<unsigned > (&cq6)->default_value (3), "the column of Q6.")
-      ("min-hit,m", po::value<int > (&min_hit)->default_value (1), "minimum number of hitting.")
-      ("bin-size,b", po::value<double > (&binSize)->default_value (0.01), "size of the bins.")
+      ("columns", po::value<string > (&cols)->default_value (""), "the columns of CV.")
+      // ("min-hit,m", po::value<int > (&min_hit)->default_value (1), "minimum number of hitting.")
+      ("bin-size,b", po::value<string > (&bins)->default_value (""), "sizes of the bins.")
       ("output", po::value<string > (&ofile)->default_value ("centers.out"), "the output of selected centers.");
   
   po::variables_map vm;
@@ -57,28 +235,40 @@ int main(int argc, char * argv[])
     return 0;
   }
 
-  unsigned nq4 = (q4up - q4low + 0.5 * binSize) / binSize;
-  unsigned nq6 = (q6up - q6low + 0.5 * binSize) / binSize;
-  
-  vector<vector<bool > > active (nq4);
-  vector<vector<int > > count_hit (nq4);
-  vector<vector<double > > min_distance (nq4);
-  vector<vector<double > > hit_time (nq4);
-  for (unsigned ii = 0; ii < nq4; ++ii){
-    active[ii].resize(nq6, false);
-    count_hit[ii].resize(nq6, 0);
-    min_distance[ii].resize(nq6, 100 * binSize);
-    hit_time[ii].resize(nq6, -1);
+  vector<string > words;
+  vector<double > binSizes;
+  vector<unsigned > columns;
+  StringOperation::split (cols, words);
+  for (unsigned ii = 0; ii < words.size(); ++ii){
+    columns.push_back (atoi(words[ii].c_str()) - 1);
+  }
+  StringOperation::split (bins, words);
+  for (unsigned ii = 0; ii < words.size(); ++ii){
+    binSizes.push_back (atof(words[ii].c_str()));
+  }
+  if (columns.size() == 0) return 0;
+  if (binSizes.size() == 1){
+    for (unsigned ii = 1; ii < columns.size(); ++ii){
+      binSizes.push_back (binSizes[0]);
+    }
+  }
+  if (columns.size() != binSizes.size()){
+    cerr << " the number of words for columns and binsizes does not match!, exit!"<< endl;
+    return 1;
   }
   
-  char *line = NULL;
+  unsigned maxcol = 0;
+  for (unsigned ii = 0; ii < columns.size(); ++ii){
+    if (columns[ii] > maxcol) maxcol = columns[ii];
+  }
+
+  vector<vector<double > > data;
+  data.resize (1 + columns.size());
+
+  char * line = NULL;
   size_t lineSize = 0;
   FILE * fp = fopen (ifile.c_str(), "r");
-  cq4--;
-  cq6--;	// make them c numbering 
-  unsigned max46 = (cq4 > cq6) ? cq4 : cq6;
-  unsigned count = 0;
-
+  int count = 0;
   while (-1 != getline(&line, &lineSize, fp)){
     if (line[0] == '#') continue;
     if (count % 1000 == 0){
@@ -88,7 +278,7 @@ int main(int argc, char * argv[])
     count ++;
     vector<string > words;
     StringOperation::split (string(line), words);
-    if (words.size() < max46+1){
+    if (words.size() < maxcol + 1){
       cerr << "wrong line format at " << line << endl;
       exit (1);
     }
@@ -96,84 +286,45 @@ int main(int argc, char * argv[])
     if (time < begin) continue;
     if (end != 0 && time > end) break;
 
-    double q4 = atof(words[cq4].c_str());
-    double q6 = atof(words[cq6].c_str());
-    unsigned iq4 = (q4) / binSize;
-    unsigned iq6 = (q6) / binSize;
-    if (iq4 >= nq4){
-      cerr << "q4 " << q4 << " is out of range " << q4low << " " << q4up << endl;
-      continue;
-    }
-    if (iq6 >= nq6){
-      cerr << "q6 " << q6 << " is out of range " << q6low << " " << q6up << endl;
-      continue;
-    }
-
-    active[iq4][iq6] = true;
-    active[iq4+1][iq6] = true;
-    active[iq4][iq6+1] = true;
-    active[iq4+1][iq6+1] = true;
-    count_hit[iq4][iq6] ++;
-    count_hit[iq4+1][iq6] ++;
-    count_hit[iq4][iq6+1] ++;
-    count_hit[iq4+1][iq6+1] ++;
-    double tmp_dist;
-    double ref_q4, ref_q6;
-    int pt_q4, pt_q6;
-//////////////////////////////////////////
-    pt_q4 = iq4;
-    pt_q6 = iq6;
-    ref_q4 = binSize * pt_q4;
-    ref_q6 = binSize * pt_q6;
-    tmp_dist = dist (q4, q6, ref_q4, ref_q6);
-    if (tmp_dist < min_distance[pt_q4][pt_q6]) {
-      min_distance[pt_q4][pt_q6] = tmp_dist;
-      hit_time[pt_q4][pt_q6] = time;
-    }
-//////////////////////////////////////////
-    pt_q4 = iq4+1;
-    pt_q6 = iq6;
-    ref_q4 = binSize * pt_q4;
-    ref_q6 = binSize * pt_q6;
-    tmp_dist = dist (q4, q6, ref_q4, ref_q6);
-    if (tmp_dist < min_distance[pt_q4][pt_q6]) {
-      min_distance[pt_q4][pt_q6] = tmp_dist;
-      hit_time[pt_q4][pt_q6] = time;
-    }
-//////////////////////////////////////////
-    pt_q4 = iq4;
-    pt_q6 = iq6+1;
-    ref_q4 = binSize * pt_q4;
-    ref_q6 = binSize * pt_q6;
-    tmp_dist = dist (q4, q6, ref_q4, ref_q6);
-    if (tmp_dist < min_distance[pt_q4][pt_q6]) {
-      min_distance[pt_q4][pt_q6] = tmp_dist;
-      hit_time[pt_q4][pt_q6] = time;
-    }
-//////////////////////////////////////////
-    pt_q4 = iq4+1;
-    pt_q6 = iq6+1;
-    ref_q4 = binSize * pt_q4;
-    ref_q6 = binSize * pt_q6;
-    tmp_dist = dist (q4, q6, ref_q4, ref_q6);
-    if (tmp_dist < min_distance[pt_q4][pt_q6]) {
-      min_distance[pt_q4][pt_q6] = tmp_dist;
-      hit_time[pt_q4][pt_q6] = time;
+    data[0].push_back (time);
+    for (unsigned ii = 0; ii < columns.size(); ++ii){
+      data[ii+1].push_back ( atof(words[columns[ii]].c_str()) );
     }
   }
   cout << endl;
-  fclose (fp);
-  
+  fclose (fp);  
   cout << "# finish reading " << endl;
-  
-  fp = fopen (ofile.c_str(), "w");
-  for (unsigned ii = 0; ii < nq4; ++ii){
-    for (unsigned jj = 0; jj < nq6; ++jj){
-      if (active[ii][jj] && count_hit[ii][jj] >= min_hit){
-	fprintf (fp, "%f %f   %f %f\n", double(ii * binSize), double(jj * binSize), hit_time[ii][jj], min_distance[ii][jj]);
+  cout << "# start computing " << endl;
+
+  if (data.size() - 1 == 2){
+    double low_c0;
+    double low_c1;
+    vector<vector<double > > hit_time;
+    vector<vector<double > > min_dist;
+    process (data[0], 
+	     data[1], data[2], 
+	     binSizes[0], binSizes[1],
+	     low_c0, low_c1,
+	     hit_time, min_dist);
+    fp = fopen (ofile.c_str(), "w");
+    for (unsigned ii = 0; ii < hit_time.size(); ++ii){
+      for (unsigned jj = 0; jj < hit_time[ii].size(); ++jj){
+	if (hit_time[ii][jj] >= 0){
+	  fprintf (fp, "%f %f   %f %f\n", 
+		   low_c0 + double(ii * binSizes[0]), 
+		   low_c1 + double(jj * binSizes[1]), 
+		   hit_time[ii][jj], 
+		   min_dist[ii][jj]);
+	}
       }
     }
+    fclose (fp);
   }
+  else {
+    cerr << "not implemented!" << endl;
+    return 1;
+  }
+  
   
   return 0;
 }
