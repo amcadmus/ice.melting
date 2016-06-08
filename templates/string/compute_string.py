@@ -34,13 +34,15 @@ def init_linear_string (node_start, node_end, numb_node):
         string [ii] = np.linspace (node_start[ii], node_end[ii], numb_node)
     return string.T
 
-def compute_string_tegent (alpha, string):
+def compute_string_tegent (alpha,
+                           string,
+                           delta_a = 0.001
+                           ):
     """ compute the tangent vector of the string, it is normalized """
     tangent = np.zeros (string.shape)
     numb_node = string.shape[0]
     dim = string.shape[1]
     smooth_str = interp1d (alpha, string, axis=0, kind="cubic")
-    delta_a = 0.001
     tangent[0]  = ( smooth_str(alpha[ 0] + delta_a) - smooth_str(alpha[ 0]) ) / delta_a
     tangent[-1] = ( smooth_str(alpha[-1]) - smooth_str(alpha[-1] - delta_a) ) / delta_a
     for ii in range (1, numb_node-1):
