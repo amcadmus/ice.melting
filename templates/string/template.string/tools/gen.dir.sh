@@ -4,7 +4,7 @@ source parameters.sh
 source env.sh
 source $gmx_bin_dir/GMXRC.bash
 
-tools_dir=`cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd`
+tools_dir=$(cd ${0%/*} && echo $PWD)
 cwd=`pwd`
 log=gen.dir.log
 rm -f $log
