@@ -8,8 +8,9 @@ from subprocess import Popen, PIPE
 import subprocess as sp
 import re
 import numpy as np
+from BatchJob import JobStatus
 from PBSJob import PBSJob
-from PBSJob import JobStatus
+from SlurmJob import SlurmJob
 import time
 import datetime
 
@@ -104,6 +105,13 @@ class StringForce (object) :
         string_dir = os.getcwd() + "/"
         job_list = []
         job_id_list = []
+        fpenv = open("env.sh", "r")
+        for line in fpenv :
+            line = line.rstrip()
+            if re.search ("batch_system=", line) :
+                batch_system = line.split("=")[-1]
+                break
+        print (batch_system)
         for node_idx in range (string.shape[0]) :            
             node_name = self.mk_node_name (node_idx)
             os.chdir (node_name)
@@ -114,7 +122,12 @@ class StringForce (object) :
             else :
                 dep_job_id = job_id_list[dep_idx]
                 sp.check_call ([string_dir+self.cmd_job_scpt, dep_job_id] )
-            job = PBSJob (node_dir, "PBS.sub")
+            if batch_system == "PBS" :
+                job = PBSJob (node_dir, "PBS.sub")
+            elif batch_system == "Slurm" :
+                job = SlurmJob (node_dir, "Slurm.sub")
+            else :
+                raise RuntimeError ("Unknown batch system")
             job_list.append (job)
             job_id = job.submit ()
             job_id_list.append (job_id)
