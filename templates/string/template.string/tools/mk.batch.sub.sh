@@ -36,6 +36,9 @@ function slurm_sub () {
     echo "#SBATCH -n $numb_proc"			>> $batch_sub
     echo "#SBATCH --ntasks-per-node=$numb_proc_per_node">> $batch_sub
     echo "#SBATCH -t $job_hour:$job_min:00"		>> $batch_sub
+    if [ ${#dep_job_id} -ne 0 ]; then
+	echo "#SBATCH --dependency=afterok:$dep_job_id"	>> $batch_sub
+    fi
     echo "source $HOME/module.sh"			>> $batch_sub
     echo 'export JASMIN_NUM_SMP_THREADS=1'              >> $batch_sub
     echo 'export JASMIN_NUM_DSM_THREADS=1'              >> $batch_sub
