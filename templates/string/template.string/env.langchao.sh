@@ -15,6 +15,7 @@ cput_hour=4
 mpirun_command=mpirun
 numb_proc=24
 numb_proc_per_node=24
+real_2_recp_ratio=5
 
 # moasp
 moasp_bin_dir=$HOME/tmp/moasp/build/src/app/

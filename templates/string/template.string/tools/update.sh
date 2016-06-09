@@ -48,6 +48,10 @@ sed -e "s/\(javis_dump_freq.*=\).*/\1 $traj_n_freq/g" |\
 sed -e "s/\(energy_freq.*=\).*/\1 $ener_n_freq/g" > tmp.out
 mv -f tmp.out ctrl.input
 
+if test ${#real_2_recp_ratio} -ne 0; then
+    sed -i "s/\(spme_p2m_proc_ratio.*=\).*/\1 $real_2_recp_ratio/g" ctrl.input
+fi
+
 # prepare top.input (restraint parameters)
 numb_res=`grep HarmonicRestraint top.input | wc -l`
 for ii in `seq 1 $numb_res`
