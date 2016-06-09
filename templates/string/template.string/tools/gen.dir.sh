@@ -83,7 +83,7 @@ echo "# using top file $top_file"		>> $log
 cp -a $system_seed_dir $out_dir
 cp $top_file $out_dir/top.input
 cp parameters.sh $out_dir
-cp env.sh $out_dir
+cp -L env.sh $out_dir
 if test ${#init_folder} -gt 0; then
     echo "$init_folder/" > $out_dir/job_dep
 fi
