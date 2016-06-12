@@ -109,7 +109,11 @@ class StringForce (object) :
             os.chdir (node_name)
             node_dir = os.getcwd() + "/"
             dep_idx = self.mk_dep_idx (node_idx)
-            if (all_at_once) or (step != 0 or dep_idx < 0) :
+            dep_finished = False
+            if dep_idx >= 0 and job_list[dep_idx].check_status() == JobStatus.finished :                
+                dep_finished = True
+            print (node_name + " dep " + str(dep_idx) + " finished " + str(dep_finished))            
+            if (all_at_once) or (step != 0 or dep_idx < 0) or dep_finished :
                 sp.check_call ([string_dir+self.cmd_job_scpt])
             else :
                 dep_job_id = job_id_list[dep_idx]
