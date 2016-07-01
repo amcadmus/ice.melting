@@ -30,7 +30,7 @@ do
     key=`echo $param_line | sed 's/.*input =\(.*\)k.*/\1/g' | awk -F'"' '{print $2}'`
     center=`echo $param_line | sed 's/.*center =\(.*\)bias.*/\1/g'`
     kk=`echo $param_line | sed 's/.*k =\(.*\)center.*/\1/g'`
-    col=`grep Print top.input | sed 's/.*input =\(.*\)file.*/\1/g' | sed 's/\"//g' | sed 's/,/\n/g' | grep -n $key | awk -F ':' '{print $1}'`
+    col=`sed 's;//.*;;g' top.input | grep Print | sed 's/.*input =\(.*\)file.*/\1/g' | sed 's/\"//g' | sed 's/,/\n/g' | grep -n $key | awk -F ':' '{print $1}'`
     col=`echo "$col+1" | bc`   
     echo "# $key $col $center $kk"
     awk "{print (\$$col - $center) * $kk}" mace.out > tmp.out
