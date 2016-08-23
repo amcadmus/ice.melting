@@ -66,17 +66,19 @@ if test $# -ge 1; then
     dep_job_id=$1
 fi
 
-nnode=`echo "$numb_proc / $numb_proc_per_node" | bc`
-rest_proc=`echo "$numb_proc - $nnode * $numb_proc_per_node" | bc `
-if [ $rest_proc -gt 0 ]; then
-    if [ $nnode -eq 0 ]; then
-	nnode=$(($nnode+1))
-	numb_proc_per_node=$rest_proc
-    else
-	echo "cannot make pbs job with $numb_proc for $nnode nodes and $numb_proc_per_node proc per node"
-    fi
-fi    
-
+if [[ $batch_system == "PBS" ]]; then
+    nnode=`echo "$numb_proc / $numb_proc_per_node" | bc`
+    rest_proc=`echo "$numb_proc - $nnode * $numb_proc_per_node" | bc `
+    if [ $rest_proc -gt 0 ]; then
+	if [ $nnode -eq 0 ]; then
+	    nnode=$(($nnode+1))
+	    numb_proc_per_node=$rest_proc
+	else
+	    echo "cannot make pbs job with $numb_proc for $nnode nodes and $numb_proc_per_node proc per node"
+	fi
+    fi  
+fi  
+    
 #echo $batch_system
 if [[ $batch_system == "PBS" ]]; then
     pbs_sub
