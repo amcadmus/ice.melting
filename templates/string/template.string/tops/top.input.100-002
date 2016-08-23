@@ -44,20 +44,20 @@ System {
 Mace {
      count	{command = "CountParticle"	set  = "atom_set"							}
      coordnation{command = "CoordinationNumber"	input = "xyz"		nlist = "nlist"	rmin = 0.31	rmax = 0.36	}
-     q4		{command = "Steinhardt" l=4	input = "xyz"		nlist = "nlist"	rmin = 0.31	rmax = 0.36	}
+//     q4		{command = "Steinhardt" l=4	input = "xyz"		nlist = "nlist"	rmin = 0.31	rmax = 0.36	}
      q6		{command = "Steinhardt"	l=6	input = "xyz"		nlist = "nlist"	rmin = 0.31	rmax = 0.36	}
      sq_100	{command = "StructureFactor"	input = "xyz"		q = 0,16.158,0			set="atom_set"	} //  | q | = 16.158 nm^-1
      sq_002	{command = "StructureFactor"	input = "xyz"		q = 0,0,17.217			set="atom_set"	} //  | q | = 17.217 nm^-1
      sq_101	{command = "StructureFactor"	input = "xyz"		q = 0,16.158,8.609		set="atom_set"	}  // | q | = 18.31 nm^-1
      sq_110	{command = "StructureFactor"	input = "xyz"		q = 13.993,24.237,0		set="atom_set"	}  // | q | = 27.99 nm^-1
      sum_coord	{command = "Summation"		input = "coordnation"	set="atom_set" 					}
-     sum_q4	{command = "Summation"		input = "q4"		set="atom_set" 					}
+//     sum_q4	{command = "Summation"		input = "q4"		set="atom_set" 					}
      sum_q6	{command = "Summation"		input = "q6"		set="atom_set" 					}
      sum_002	{command = "Summation"		input = "sq_002"	set="atom_set" 					}
      sum_100	{command = "Summation"		input = "sq_100"	set="atom_set" 					}
      sum_101	{command = "Summation"		input = "sq_101"	set="atom_set" 					}
      sum_110	{command = "Summation"		input = "sq_110"	set="atom_set" 					}
-     l2_q4	{command = "L2Norm"		input = "sum_q4"	coeff=1,1,2,2,2,2,2,2,2,2			}
+//     l2_q4	{command = "L2Norm"		input = "sum_q4"	coeff=1,1,2,2,2,2,2,2,2,2			}
      l2_q6	{command = "L2Norm"		input = "sum_q6"	coeff=1,1,2,2,2,2,2,2,2,2,2,2,2,2		}
      l2_100	{command = "L2Norm"		input = "sum_100"	coeff=1,1					}
      l2_002	{command = "L2Norm"		input = "sum_002"	coeff=1,1					}
@@ -65,7 +65,7 @@ Mace {
      l2_110	{command = "L2Norm"		input = "sum_110"	coeff=1,1					}
      l2_sqxy	{command = "L2Norm"		input = "sum_100"	coeff=1,1					}
      l2_sqz	{command = "L2Norm"		input = "sum_002"	coeff=1,1					}
-     norm_q4	{command = "Divide"		input = "l2_q4","sum_coord"						}
+//     norm_q4	{command = "Divide"		input = "l2_q4","sum_coord"						}
      norm_q6	{command = "Divide"		input = "l2_q6","sum_coord"						}
      norm_100	{command = "Divide"		input = "l2_100","count"						}	
      norm_002	{command = "Divide"		input = "l2_002","count"						}	
@@ -76,5 +76,6 @@ Mace {
     res_q6	{command = "HarmonicRestraint"	input = "norm_q6"	k = K_VALUE		center = CENTER_VALUE	bias = TRUE	}
     res_sqxy	{command = "HarmonicRestraint"	input = "norm_sqxy"	k = K_VALUE		center = CENTER_VALUE	bias = TRUE	}
     res_sqz	{command = "HarmonicRestraint"	input = "norm_sqz"	k = K_VALUE		center = CENTER_VALUE	bias = TRUE	}
-    print	{command = "Print"		input = "norm_q6","norm_sqxy","norm_sqz","norm_q4","norm_100","norm_002","norm_101","norm_110","res_q6","res_sqxy","res_sqz"	file = "mace.out"	every = 1	}
+//    print	{command = "Print"		input = "norm_q6","norm_sqxy","norm_sqz","norm_q4","norm_100","norm_002","norm_101","norm_110","res_q6","res_sqxy","res_sqz"	file = "mace.out"	every = 1	}
+    print	{command = "Print"		input = "norm_q6","norm_sqxy","norm_sqz","norm_100","norm_002","norm_101","norm_110","res_q6","res_sqxy","res_sqz"	file = "mace.out"	every = 1	}
 }
