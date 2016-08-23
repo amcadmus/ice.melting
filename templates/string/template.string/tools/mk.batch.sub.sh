@@ -33,8 +33,9 @@ function pbs_sub () {
 
 function slurm_sub () {
     echo "#!/bin/bash "					>  $batch_sub
+    echo "#SBATCH -N $numb_node"			>> $batch_sub
     echo "#SBATCH -n $numb_proc"			>> $batch_sub
-    echo "#SBATCH --ntasks-per-node=$numb_proc_per_node">> $batch_sub
+#    echo "#SBATCH --ntasks-per-node=$numb_proc_per_node">> $batch_sub
     echo "#SBATCH -t $job_hour:$job_min:00"		>> $batch_sub
     if [ ${#dep_job_id} -ne 0 ]; then
 	echo "#SBATCH --dependency=afterok:$dep_job_id"	>> $batch_sub

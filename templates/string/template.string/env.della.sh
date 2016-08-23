@@ -13,8 +13,9 @@ cput_hour=
 
 # mpi
 mpirun_command=srun
-numb_proc=15
-numb_proc_per_node=5
+numb_proc=30
+numb_node=2-3
+# numb_proc_per_node=5
 real_2_recp_ratio=4
 
 # moasp
