@@ -5,6 +5,7 @@ import os
 import argparse
 import numpy as np
 import subprocess as sp
+import logging
 from scipy.interpolate import interp1d
 from StringForce import StringForce
 from subprocess import Popen, PIPE
@@ -123,6 +124,7 @@ def compute_string (compute_force,              # function for computing the for
         smooth_str = interp1d (alpha, string, axis=0, kind="cubic")
         if np.max (alpha_seg[1:]) / np.min(alpha_seg[1:]) > factor_Q :
             string = smooth_str (alpha_eq)
+            logging.info ("step %06d: resampled .", ii)
         # compute the max norm force as measure of convergence
         if ii != start_iter :
             norm_string = smooth_str (alpha_eq)
@@ -136,10 +138,11 @@ def compute_string (compute_force,              # function for computing the for
                 incr_hist = new_item
             else:
                 incr_hist = np.append (incr_hist, new_item, axis=0)
-            print ("step " + str(ii) + " updates with string difference " + str(diff_inf))
+            logging.info ("step %06d: updated with timestep %e . String difference is %e", ii, dt, diff_inf)
             conv_file.write (str(ii) + " " + str(diff_inf) + "\n")
         else :
             norm_string_old = smooth_str (alpha_eq)            
+            logging.info ("step %06d: updated with timestep %e .", ii, dt)
 #    print incr_hist
     conv_file.close ()
     return string    
@@ -167,11 +170,13 @@ def main ():
 
     sf.replace ("template.string/parameters.sh", "md_time=.*", "md_time=" + str(args.md_time))
 
+    logging.basicConfig (filename="string.log", filemode="a", level=logging.INFO)
+
     if os.path.exists ("tag_fin_string") :        
         fp = open ("tag_fin_string", "r")
         start_step = int(fp.readlines()[-1])
         fp.close()
-        print ("# find step " + str(start_step) + ". start from it")
+        logging.info ("find step %06d, start from it", start_step)
         start_name = sf.mk_string_name (start_step)        
 
     if start_step == 0 and args.start != start_name :
