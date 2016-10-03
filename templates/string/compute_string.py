@@ -124,7 +124,7 @@ def compute_string (compute_force,              # function for computing the for
         smooth_str = interp1d (alpha, string, axis=0, kind="cubic")
         if np.max (alpha_seg[1:]) / np.min(alpha_seg[1:]) > factor_Q :
             string = smooth_str (alpha_eq)
-            logging.info ("step %06d: resampled .", ii)
+            logging.info ("string %06d: resampled .", ii+1)
         # compute the max norm force as measure of convergence
         if ii != start_iter :
             norm_string = smooth_str (alpha_eq)
@@ -138,11 +138,11 @@ def compute_string (compute_force,              # function for computing the for
                 incr_hist = new_item
             else:
                 incr_hist = np.append (incr_hist, new_item, axis=0)
-            logging.info ("step %06d: updated with timestep %e . String difference is %e", ii, dt, diff_inf)
+            logging.info ("string %06d: updated with timestep %e . String difference is %e", ii+1, dt, diff_inf)
             conv_file.write (str(ii) + " " + str(diff_inf) + "\n")
         else :
             norm_string_old = smooth_str (alpha_eq)            
-            logging.info ("step %06d: updated with timestep %e .", ii, dt)
+            logging.info ("string %06d: updated with timestep %e .", ii+1, dt)
 #    print incr_hist
     conv_file.close ()
     return string    
@@ -176,7 +176,7 @@ def main ():
         fp = open ("tag_fin_string", "r")
         start_step = int(fp.readlines()[-1])
         fp.close()
-        logging.info ("find step %06d, start from it", start_step)
+        logging.info ("find string %06d, start from it", start_step)
         start_name = sf.mk_string_name (start_step)        
 
     if start_step == 0 and args.start != start_name :
