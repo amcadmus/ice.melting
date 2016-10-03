@@ -170,7 +170,7 @@ def main ():
 
     sf.replace ("template.string/parameters.sh", "md_time=.*", "md_time=" + str(args.md_time))
 
-    logging.basicConfig (filename="string.log", filemode="a", level=logging.INFO)
+    logging.basicConfig (filename="compute_string.log", filemode="a", level=logging.INFO)
 
     if os.path.exists ("tag_fin_string") :        
         fp = open ("tag_fin_string", "r")
