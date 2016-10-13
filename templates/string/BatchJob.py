@@ -56,9 +56,8 @@ class BatchJob (object):
             if stat != JobStatus.terminated :
                 if stat == JobStatus.unknow :
                     raise RuntimeError ("unknown job status, terminate!")
-                print ("# job " +
-                       self.get_job_id() +
-                       " already submitted (waiting, running or finished), would not submit again")
+                print ("# job %s, dir %s already submitted (waiting, running or finished), would not submit again" %
+                       (self.get_job_id(), self.job_dir))
                 return self.get_job_id()
             else :
                 print ("# find terminated job " + self.get_job_id() + ", submit again")                
@@ -74,7 +73,7 @@ class BatchJob (object):
         if str(stderr, encoding='ascii') != "":
             raise RuntimeError (stderr)
         job_id = str(stdout, encoding='ascii').replace('\n','').split()[-1]
-        print ("# submitted job has ID: " + job_id)
+        print ("# job %s submitted, dir %s " % (job_id, self.job_dir))
         fp = open (self.job_id_file, 'w')
         fp.write (job_id)
         fp.close()

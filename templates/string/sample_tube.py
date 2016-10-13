@@ -10,6 +10,13 @@ import enum as Enum
 from StringForce import StringForce
 from subprocess import Popen, PIPE
 
+import glob
+from BatchJob import JobStatus
+from PBSJob import PBSJob
+from SlurmJob import SlurmJob
+import time
+import datetime
+
 def dist (gened,
           node ) :
     min_p = 0
@@ -153,21 +160,103 @@ def gen_jobs (input_tube) :
             break
         step = step + 1    
 
+def submit_step (step_name,
+                 max_numb_job) :    
+    base_dir = os.getcwd()
+    sf = StringForce ("template.string")
+    if False == os.path.exists (step_name) :
+        raise RuntimeError ("no step dir " + step_name + " should be generated before submitting")
+    string = np.loadtxt (step_name + "/string.out")
+    os.chdir (step_name)
+    step_dir = os.getcwd() + "/"
+    job_list = []
+    fpenv = open("env.sh", "r")
+    for line in fpenv :
+        line = line.rstrip()
+        if re.search ("batch_system=", line) :
+            batch_system = line.split("=")[-1]
+            break
+    print (batch_system)
+    for node_idx in range (string.shape[0]) :            
+        node_name = sf.mk_node_name (node_idx)
+        os.chdir (node_name)
+        node_dir = os.getcwd() + "/"
+        sp.check_call ([step_dir + sf.cmd_job_scpt])
+        if batch_system == "PBS" :
+            job = PBSJob (node_dir, "PBS.sub")
+        elif batch_system == "Slurm" :
+            job = SlurmJob (node_dir, "Slurm.sub")
+        else :
+            raise RuntimeError ("Unknown batch system")
+        job_id = job.submit ()
+        if job.check_status () != JobStatus.finished :
+            job_list.append (job)
+        os.chdir (step_dir)
+        if len(job_list) >= max_numb_job :
+            break
+    os.chdir (base_dir)        
+    return job_list
+
+def wait_step (job_list) :
+    while True :
+        find_unfinish = False
+        for job in job_list :
+            stat = job.check_status ()
+            if stat == JobStatus.terminated :
+                print (" find terminated job %s, wait and check again " % job.get_job_id())
+                time.sleep (10)
+                stat = job.check_status ()
+                if stat == JobStatus.terminated :
+                    raise RuntimeError ("find terminated job %s. exit. should restart" % job.get_job_id())
+            if stat != JobStatus.finished :
+                find_unfinish = True
+                break
+        if find_unfinish == False :
+            return
+        else :
+            time.sleep (10)
+        print ("# checked at " + time.strftime("%Y-%m-%d %H:%M:%S"))            
+    
+    
+def exec_jobs (max_numb_job) :
+    dirnames = glob.glob ("step.*")
+    if os.path.exists ("tag_fin_step") :
+        fin_steps = [ line.rstrip('\n') for line in open("tag_fin_step") ]
+        step_list = [ step for step in dirnames if step not in fin_steps ]
+    else :
+        step_list = dirnames
+
+    print (dirnames)
+    print (fin_steps)
+    print (step_list)
+
+    # job_list = submit_step ("step.000001", max_numb_job)
+    # for ii in job_list:
+    #     print ("id %s  status %s" % (ii.get_job_id(), ii.check_status()) )
+
+    for ii in step_list :
+        while True :
+            job_list = submit_step (ii, max_numb_job)
+            if len(job_list) == 0 :
+                break
+            wait_step (job_list)            
+        fp = open ("tag_fin_step", "a")
+        fp.write (ii + "\n")
+        fp.close ()
+
 def main ():
     parser = argparse.ArgumentParser(
         description="*** Sample a tube. ***")
-    parser.add_argument('-s', '--string', default = "string.000000",
-                        help='The string. ')
-    parser.add_argument('-i', '--input', default = "tube.out",
-                        help='The tube. ')
     parser.add_argument('-g', '--gen-jobs', action = "store_true", default = False,
                         help='Generate jobs for a tube. ')
+    parser.add_argument('-i', '--input', default = "tube.out",
+                        help='The tube. ')
+    parser.add_argument('-t', '--md-time', type=int, default=20,
+                        help='Physical time of MD simulation in unit of ps.')
     parser.add_argument('-e', '--exec-jobs', action = "store_true", default = False,
                         help='Submit jobs for a tube. ')
     parser.add_argument('-m', '--max-numb-jobs', type=int, default = 100,
                         help='The maximum number of allowed jobs. ')
-    parser.add_argument('-t', '--md-time', type=int, default=20,
-                        help='Physical time of MD simulation in unit of ps.')
     args = parser.parse_args()
 
     logging.basicConfig (filename="sample_tube.log", filemode="w", level=logging.INFO, format='%(asctime)s %(message)s')
@@ -177,8 +266,8 @@ def main ():
 
     if args.gen_jobs :
         gen_jobs (args.input)
-    # if args.exec_jobs :
-    #     exec_jobs (args.max_numb_jobs)        
+    if args.exec_jobs :
+        exec_jobs (args.max_numb_jobs)        
 
 if __name__ == "__main__":
     main ()
