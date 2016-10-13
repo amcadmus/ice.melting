@@ -78,45 +78,6 @@ def select_node_from_list (gened_list,
 
 def make_dir_name (step) :
     return "step.%06d" % (step)
-
-# def generate_dir (sel,
-#                   dir_name,
-#                   dep_dir_name) :
-#     sf = StringForce ("template.string")
-#     dep_nodes = np.loadtxt (dep_dir_name + "/string.out")
-
-#     if not os.path.exists (dir_name) :
-#         sp.check_call ("cp -a " + sf.string_template + " " + dir_name, shell = True)
-#     np.savetxt (dir_name + "/string.out", sel)
-
-#     base_dir = os.getcwd() + '/'
-#     os.chdir (dir_name)
-#     for ii in range (sel.shape[0]) :
-#         node_center = sel[ii]
-#         ret = dist (dep_nodes, node_center)
-#         dep_posi = ret[1]
-#         dep_node_name = sf.mk_node_name (dep_posi)
-#         dep_node_name = "../" + dep_dir_name + "/" + dep_node_name
-#         node_name = sf.mk_node_name (ii)
-#         sf.mk_node_param (node_center)
-#         ret = Popen ([sf.cmd_gen_dir, node_name, dep_node_name],  stdout=PIPE, stderr=PIPE)
-#         stdout, stderr = ret.communicate()
-#         if ret.returncode == 1 :
-#             raise RuntimeError ("cannot generate node. LOCATION: string: " +
-#                                 dir_name +
-#                                 " node index: " +
-#                                 str(ii) +
-#                                 ".  error info: " +
-#                                 str(stderr, encoding='ascii') +
-#                                 ".  error info: " +
-#                                 str(stdout, encoding='ascii')
-#                                 )
-#         if ret.returncode == 10 :
-#             logging.info ("# detected  node: " + dir_name + "/" + node_name + " do nothing.")
-#         else :
-#             logging.info ("# generated node: " + dir_name + "/" + node_name + " with dep " + dep_node_name)
-            
-#     os.chdir (base_dir)
                   
 def generate_dir (select,
                   select_index,
@@ -134,11 +95,11 @@ def generate_dir (select,
     for ii in range (select.shape[0]) :
         dep_step_index = select_index[ii][0]
         dep_node_index = select_index[ii][1]
-        pair_dist = np.linalg.norm (select[ii] - np.array(gened_list[dep_step_index][dep_node_index]))
-        dep_node_name = "../" + make_dir_name(dep_step_index) + "/" + sf.mk_node_name(dep_node_index)
+        pair_dist = np.linalg.norm (select[ii] - gened_list[dep_step_index][dep_node_index])
+        dep_node_name = make_dir_name(dep_step_index) + "/" + sf.mk_node_name(dep_node_index)
         node_name = sf.mk_node_name (ii)
         sf.mk_node_param (select[ii])
-        ret = Popen ([sf.cmd_gen_dir, node_name, dep_node_name],  stdout=PIPE, stderr=PIPE)
+        ret = Popen ([sf.cmd_gen_dir, node_name, "../" + dep_node_name],  stdout=PIPE, stderr=PIPE)
         stdout, stderr = ret.communicate()
         if ret.returncode == 1 :
             raise RuntimeError ("cannot generate node. LOCATION: string: " +
@@ -157,7 +118,40 @@ def generate_dir (select,
                           + " dist " + str(pair_dist))
             
     os.chdir (base_dir)
-                  
+
+def gen_jobs (input_tube) :
+    if not os.path.isfile (make_dir_name(0) + "/string.out") :
+        raise RuntimeError ("no file " + make_dir_name(0) + "/string.out")
+    if not os.path.isfile (input_tube) :
+        raise RuntimeError ("no file " + input_tube)        
+    fp = open (input_tube)
+    head = fp.readline ()
+    head = re.sub (r"\#|[a-z]|_|\[|\]|\n","",head)
+    mesh_spacing = np.fromstring (head, dtype=float, sep=" ")
+    logging.info ("mesh spacing %s" % mesh_spacing)
+    max_spacing = np.amax (mesh_spacing)
+    logging.info ("max mesh spacing %s" % max_spacing)
+    fp.close()
+    
+    select = np.loadtxt (make_dir_name(0)  + "/string.out")
+    gened = [select]
+    unselect = np.loadtxt (input_tube)
+    radius = max_spacing * 1.1
+    logging.info ("selecting radius %s" % radius)
+    step = 1
+    while True :
+        ret = select_node_from_list (gened, unselect, radius)
+        select = ret[0]
+        select_index = ret[1]
+        unselect = ret[2]
+        msg = "step %d. generated list len %d. numb selected nodes %d" % (step, len(gened), select.shape[0])
+        print (msg)
+        logging.info (msg)
+        generate_dir (select, select_index, gened)
+        gened.append (select)            
+        if np.size(unselect) == 0 :
+            break
+        step = step + 1    
 
 def main ():
     parser = argparse.ArgumentParser(
@@ -166,11 +160,13 @@ def main ():
                         help='The string. ')
     parser.add_argument('-i', '--input', default = "tube.out",
                         help='The tube. ')
-    parser.add_argument('-j', '--gen-jobs', action = "store_true", default = False,
+    parser.add_argument('-g', '--gen-jobs', action = "store_true", default = False,
                         help='Generate jobs for a tube. ')
-    # parser.add_argument('--gen-dir-script', default = "tools/gen.dir.sh",
-    #                     help='Generate script for job. ')
-    parser.add_argument('-t','--md-time', type=int, default=20,
+    parser.add_argument('-e', '--exec-jobs', action = "store_true", default = False,
+                        help='Submit jobs for a tube. ')
+    parser.add_argument('-m', '--max-numb-jobs', type=int, default = 100,
+                        help='The maximum number of allowed jobs. ')
+    parser.add_argument('-t', '--md-time', type=int, default=20,
                         help='Physical time of MD simulation in unit of ps.')
     args = parser.parse_args()
 
@@ -179,47 +175,10 @@ def main ():
     sf = StringForce ("template.string")
     sf.replace ("template.string/parameters.sh", "md_time=.*", "md_time=" + str(args.md_time))
 
-    tag_gen_jobs = 'tag_gen_jobs'
     if args.gen_jobs :
-        if os.path.isfile (tag_gen_jobs) :
-            msg = "jobs already generated, if want to regenerate, remove the tag: " + tag_gen_jobs
-            logging.error (msg)
-            raise RuntimeError (msg)
-        if not os.path.isfile (args.string + "/string.out") :
-            raise RuntimeError ("no file " + args.string)        
-        if not os.path.isfile (args.input) :
-            raise RuntimeError ("no file " + args.input)        
-        fp = open (args.input)
-        head = fp.readline ()
-        head = re.sub (r"\#|[a-z]|_|\[|\]|\n","",head)
-        mesh_spacing = np.fromstring (head, dtype=float, sep=" ")
-        print ("mesh spacing %s" % mesh_spacing)
-        max_spacing = np.amax (mesh_spacing)
-        print ("max mesh spacing %s" % max_spacing)
-        
-        select = np.loadtxt (make_dir_name(0)  + "/string.out")
-        gened = [select]
-        unselect = np.loadtxt (args.input)
-        radius = max_spacing * 1.1
-        step = 1
-        while True :
-            ret = select_node_from_list (gened, unselect, radius)
-            select = ret[0]
-            select_index = ret[1]
-            unselect = ret[2]            
-            dir_name = make_dir_name (step)            
-            print ("step %d" % step)
-            print (select.shape)
-            print (select_index.shape)
-            generate_dir (select, select_index, gened)
-            gened.append (select)            
-            logging.info ("numb generated list %d", len(gened))
-            if np.size(unselect) == 0 :
-                break
-            step = step + 1
-            
-        
+        gen_jobs (args.input)
+    # if args.exec_jobs :
+    #     exec_jobs (args.max_numb_jobs)        
 
 if __name__ == "__main__":
-
     main ()
