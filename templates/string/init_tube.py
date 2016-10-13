@@ -79,7 +79,7 @@ def main () :
     parser = argparse.ArgumentParser(
         description="*** Initialize a tube around a string. Do not do the simulation. ***")
 
-    parser.add_argument('-s', '--string', default = "",
+    parser.add_argument('-s', '--string', default = "step.000000",
                         help='The string. ')
     parser.add_argument('-o', '--output', default = "tube.out",
                         help='The file for output tube. ')
