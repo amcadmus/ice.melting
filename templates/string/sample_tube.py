@@ -176,7 +176,6 @@ def submit_step (step_name,
         if re.search ("batch_system=", line) :
             batch_system = line.split("=")[-1]
             break
-    print (batch_system)
     for node_idx in range (string.shape[0]) :            
         node_name = sf.mk_node_name (node_idx)
         os.chdir (node_name)
@@ -203,11 +202,15 @@ def wait_step (job_list) :
         for job in job_list :
             stat = job.check_status ()
             if stat == JobStatus.terminated :
-                print (" find terminated job %s, wait and check again " % job.get_job_id())
+                logging.info ("find terminated job %s, wait and check again " % job.get_job_id())
                 time.sleep (10)
                 stat = job.check_status ()
                 if stat == JobStatus.terminated :
-                    raise RuntimeError ("find terminated job %s. exit. should restart" % job.get_job_id())
+                    msg = "find terminated job %s. exit. should restart" % job.get_job_id()
+                    logging.error (msg)
+                    raise RuntimeError (msg)
+                else :
+                    logging.info ("check passed")
             if stat != JobStatus.finished :
                 find_unfinish = True
                 break
@@ -226,13 +229,7 @@ def exec_jobs (max_numb_job) :
     else :
         step_list = dirnames
 
-    print (dirnames)
-    print (fin_steps)
-    print (step_list)
-
-    # job_list = submit_step ("step.000001", max_numb_job)
-    # for ii in job_list:
-    #     print ("id %s  status %s" % (ii.get_job_id(), ii.check_status()) )
+    logging.info ("will do steps %s" % step_list)
 
     for ii in step_list :
         while True :
