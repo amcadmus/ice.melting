@@ -75,7 +75,7 @@ def wait_step (job_list) :
         if find_unfinish == False :
             return
         else :
-            time.sleep (10)
+            time.sleep (60)
         print ("# checked at " + time.strftime("%Y-%m-%d %H:%M:%S"))            
     
     
