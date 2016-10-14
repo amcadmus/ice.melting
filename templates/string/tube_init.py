@@ -89,7 +89,7 @@ def main () :
                         help='The radius of the tube around the string')
     args = parser.parse_args()
 
-    logging.basicConfig (filename="init_tube.log", filemode="w", level=logging.INFO, format='%(asctime)s %(message)s')
+    logging.basicConfig (filename="tube_init.log", filemode="w", level=logging.INFO, format='%(asctime)s %(message)s')
 
     # parse the string
     logging.info ("gen tube for string: %s" % args.string)
