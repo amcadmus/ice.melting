@@ -14,12 +14,13 @@ class FreeEnergyFit (object) :
         return
     
     def value (self,
-               xx ):
-        value = 0
+               xx_ ):
+        xx = np.array(xx_)
+        value = np.zeros (xx.shape[0])
         for ii in range(len(self.bases)) :
             value = value + self.a[ii] * self.bases[ii].value(xx)
         return value
-
+        
     def compute_a (self,
                    sigma,
                    zz_,

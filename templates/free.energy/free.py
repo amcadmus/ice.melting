@@ -55,15 +55,17 @@ if __name__ == "__main__" :
             f_array.append (zf)
 
     fe.compute_a (1, z_array, f_array)
-    
+
+    f1_array = fe.value (z_array)
+
     fp = open ("results.out", "w")
     z0 = np.array([xx[0], yy[0]])
     f0 = func (z0)
-    f1 = fe.value (z0)
     for ii in range (nx+1) :
         for jj in range (ny+1) :
             zz = np.array([xx[ii], yy[jj]])
-            fp.write ("%f\t%f\t  %f\t%f\n" % (xx[ii], yy[jj], func(zz) - f0, fe.value(zz) - f1))
+            # fp.write ("%f\t%f\t  %f\t%f\n" % (xx[ii], yy[jj], func(zz) - f0, fe.value(zz) - f1))
+            fp.write ("%f\t%f\t  %f\t%f\n" % (xx[ii], yy[jj], func(zz) - f0, f1_array[ii*(nx+1)+jj] - f1_array[0]))
         fp.write ("\n")
 
     fp.close()
