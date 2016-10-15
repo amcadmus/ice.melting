@@ -22,47 +22,48 @@ def test_compute_force (xx):
 
 if __name__ == "__main__" :
     bg = bg.BasisGaussian ([1.2,0], 3)
-    xx = np.array ([0, 0])
+    xx = np.array ([[2., 0.], [-1.,0.]])
     hh = 1e-4
-    hx = np.array ([hh, 0])    
-    print ("value is %f" % bg.value (xx))
-    print ("value is %f" % bg.value (xx+hx))
-    print ("value is %f" % bg.value (xx-hx))
-    print ("grad  is %s" % bg.grad (xx))
-    print ("cdiff gradx is %s" % ( (bg.value (xx+hx) - bg.value(xx-hx)) / (2*hh) ))
-    print ("acc is", bg.grad (xx)[0] - ( (bg.value (xx+hx) - bg.value(xx-hx)) / (2*hh) )) 
+    hx = np.array ([[hh, 0], [hh,0] ])    
+    # print ("value is %s" % bg.value (xx))
+    # print ("value is %s" % bg.value (xx+hx))
+    # print ("value is %s" % bg.value (xx-hx))
+    # print ("grad  is %s" % bg.grad (xx))
+    # print ("cdiff gradx is %s" % ( (bg.value (xx+hx) - bg.value(xx-hx)) / (2*hh) ))
+    # print ("acc is", bg.grad (xx)[0][0] - ( (bg.value (xx+hx) - bg.value(xx-hx)) / (2*hh) )[0]) 
+    # print ("acc is", bg.grad (xx)[1][0] - ( (bg.value (xx+hx) - bg.value(xx-hx)) / (2*hh) )[1]) 
     
-    # fe = fef.FreeEnergyFit ()
+    fe = fef.FreeEnergyFit ()
     
-    # nx = 30
-    # ny = 30
-    # xlo = -1.5
-    # xup = 1.5
-    # ylo = -1.5
-    # yup = 1.5
-    # hx = (xup - xlo) / nx
-    # hy = (yup - ylo) / ny
-    # xx = np.arange (xlo, xup+hx, hx)
-    # yy = np.arange (ylo, yup+hy, hy)    
-    # z_array = []
-    # f_array = []
-    # for ii in range (nx+1) :
-    #     for jj in range (ny+1) :
-    #         zz = np.array([xx[ii], yy[jj]])
-    #         zf = test_compute_force (zz)
-    #         z_array.append (zz)
-    #         f_array.append (zf)
+    nx = 40
+    ny = 40
+    xlo = -1.5
+    xup = 1.5
+    ylo = -1.5
+    yup = 1.5
+    hx = (xup - xlo) / nx
+    hy = (yup - ylo) / ny
+    xx = np.arange (xlo, xup+hx, hx)
+    yy = np.arange (ylo, yup+hy, hy)    
+    z_array = []
+    f_array = []
+    for ii in range (nx+1) :
+        for jj in range (ny+1) :
+            zz = np.array([xx[ii], yy[jj]])
+            zf = test_compute_force (zz)
+            z_array.append (zz)
+            f_array.append (zf)
 
-    # fe.compute_a (1, z_array, f_array)
+    fe.compute_a (1, z_array, f_array)
     
-    # fp = open ("results.out", "w")
-    # z0 = np.array([xx[0], yy[0]])
-    # f0 = func (z0)
-    # f1 = fe.value (z0)
-    # for ii in range (nx+1) :
-    #     for jj in range (ny+1) :
-    #         zz = np.array([xx[ii], yy[jj]])
-    #         fp.write ("%f\t%f\t  %f\t%f\n" % (xx[ii], yy[jj], func(zz) - f0, fe.value(zz) - f1))
-    #     fp.write ("\n")
+    fp = open ("results.out", "w")
+    z0 = np.array([xx[0], yy[0]])
+    f0 = func (z0)
+    f1 = fe.value (z0)
+    for ii in range (nx+1) :
+        for jj in range (ny+1) :
+            zz = np.array([xx[ii], yy[jj]])
+            fp.write ("%f\t%f\t  %f\t%f\n" % (xx[ii], yy[jj], func(zz) - f0, fe.value(zz) - f1))
+        fp.write ("\n")
 
-    # fp.close()
+    fp.close()
