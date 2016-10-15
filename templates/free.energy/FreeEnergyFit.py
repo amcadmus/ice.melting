@@ -43,7 +43,14 @@ class FreeEnergyFit (object) :
         tm1 = time.time()
         gradMat = np.zeros ([ndata*ndata, dim])
         for ii in range (ndata) :
-            gradMat[ii*ndata:ii*ndata+ii+1] = self.bases[ii].grad (zz[0:ii+1])        
+            gradMat[ii*ndata:ii*ndata+ii+1] = self.bases[ii].grad (zz[0:ii+1]) 
+            # for jj in range (ii+1) :
+            #     gradMat[ii*ndata+jj] = self.bases[ii].grad (zz[jj]) 
+            # tmp = self.bases[ii].grad (zz[0:ii+1]) 
+            # if (np.linalg.norm (tmp - gradMat[ii*ndata:ii*ndata+ii+1])) > 1e-12 : 
+            #     print (tmp)
+            # print (tmp)
+            # print (gradMat[ii*ndata:ii*ndata+ii+1])
         t0 = time.time()
         for ii in range (ndata) :
             for jj in range (ii,ndata) :
