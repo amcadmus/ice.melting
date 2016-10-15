@@ -35,8 +35,8 @@ if __name__ == "__main__" :
     
     fe = fef.FreeEnergyFit ()
     
-    nx = 40
-    ny = 40
+    nx = 30
+    ny = 30
     xlo = -1.5
     xup = 1.5
     ylo = -1.5

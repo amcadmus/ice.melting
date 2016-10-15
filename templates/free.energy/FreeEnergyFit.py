@@ -40,8 +40,8 @@ class FreeEnergyFit (object) :
 
         # generate the matrix gradMat
         print ("# before gradMat", flush = True)
-        gradMat = np.zeros ([ndata*ndata, dim])
         tm1 = time.time()
+        gradMat = np.zeros ([ndata*ndata, dim])
         for ii in range (ndata) :
             gradMat[ii*ndata:ii*ndata+ii+1] = self.bases[ii].grad (zz[0:ii+1])        
         t0 = time.time()
@@ -50,26 +50,33 @@ class FreeEnergyFit (object) :
                 gradMat[ii*ndata+jj] = - gradMat[jj*ndata+ii]
         t1 = time.time()
         gradMat = np.transpose (gradMat)
+        gradMat = gradMat.reshape (dim, ndata, ndata)
         t2 = time.time()
         print ("# after  gradMat  total %f s, multiply0: %f s, multiply1: %f s, trans %s s" % ( (t2 - tm1), (t0 - tm1), (t1-t0), (t2-t1)), flush = True)        
+
         # assemble the matrix B
-        print ("# before B", flush = True)
         BB = np.zeros ([ndata, ndata])
         CC = np.zeros (ndata)
+        print ("# before B", flush = True)
         t0 = time.time()
         for kk in range (dim) :
-            BB = BB + np.dot (gradMat[kk].reshape(ndata,ndata), gradMat[kk].reshape(ndata,ndata))
+            BB = BB + np.matmul (gradMat[kk], gradMat[kk])
         t1 = time.time()
         print ("# after  B   total %f s" % (t1 - t0), flush = True)
+
+        # assemble the matrix C
         print ("# before C", flush = True)
         zft = zf.T
         for kk in range (dim) :
-            CC = CC + np.dot (gradMat[kk].reshape(ndata,ndata), zft[kk])
+            CC = CC + np.dot (gradMat[kk], zft[kk])
         print ("# after  C", flush = True)
         
+        # assemble the matrix C
         print ("# before solve", flush = True)
+        t0 = time.time()
         self.a = np.linalg.solve (BB, CC)
-        print ("# after  solve", flush = True)
+        t1 = time.time()
+        print ("# after  solve   total %f s" % (t1 - t0), flush = True)
         # print (BB)
         # print (CC)
         # print (self.bases)
