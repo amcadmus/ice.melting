@@ -20,11 +20,28 @@ class FreeEnergyFit (object) :
         for ii in range(len(self.bases)) :
             value = value + self.a[ii] * self.bases[ii].value(xx)
         return value
+
+    def grad (self,
+              xx_ ):
+        xx = np.array(xx_)
+        grad = np.zeros (xx.shape)
+        for ii in range(len(self.bases)) :
+            grad = grad + self.a[ii] * self.bases[ii].grad(xx)
+        return grad
+
+    def resd (self,
+              zz_,
+              zf_ ) :
+        zz = np.array (zz_)
+        zf = np.array (zf_)
+        diff = zf - self.grad (zz)
+        print (diff)
+        return (np.linalg.norm (diff) / zf.shape[0])
         
-    def compute_a (self,
-                   sigma,
-                   zz_,
-                   zf_ ) :
+    def fit (self,
+             sigma,
+             zz_,
+             zf_ ) :
         """
         compute the prefactors a given a sigma
         zz: the position
@@ -32,7 +49,6 @@ class FreeEnergyFit (object) :
         """
         zz = np.array(zz_)
         zf = np.array(zf_)
-        sigma = zz[1][1] - zz[0][1] 
         ndata = zz.shape[0]
         dim = zz.shape[1]
         self.bases = []

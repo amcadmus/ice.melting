@@ -54,9 +54,12 @@ if __name__ == "__main__" :
             z_array.append (zz)
             f_array.append (zf)
 
-    fe.compute_a (1, z_array, f_array)
+    sigma = z_array[1][1] - z_array[0][1] 
+    sigma = sigma * 1
+    fe.fit (sigma, z_array, f_array)
 
     f1_array = fe.value (z_array)
+    print ("resd", fe.resd (z_array, f_array))
 
     fp = open ("results.out", "w")
     z0 = np.array([xx[0], yy[0]])

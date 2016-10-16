@@ -5,7 +5,7 @@ import numpy as np
 
 class BasisGaussian (object) :
     """
-    The Gaussian basis e^{-|x - x_c|^2 / 2}
+    The Gaussian basis e^{-|x - x_c|^2 / (2 * sigma^2)}
     """
     def __init__ (self,
                   center, 
