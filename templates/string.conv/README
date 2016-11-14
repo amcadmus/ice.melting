@@ -1,1 +1,14 @@
 test the convergence of string with randomly perturbed force.
+
+
+Examples are
+  ./compute_string.py -d 1e-2 -s .5
+  ./compute_string.py -d 1e-2 -s .1
+  ./compute_string.py -d 1e-2 -s .2
+  ./compute_string.py -d 1e-2 -s .3
+  ./compute_string.py -d 1e-2 -s .15 -n 200
+  ./compute_string.py -d 1e-2 -s .3 -n 200
+  ./compute_string.py -d 1e-2 -s .4 -n 200
+  ./compute_string.py -d 1e-2 -s .2 -n 200
+  ./compute_string.py -d .5e-2 -s .4 -n 200
+  ./compute_string.py -d 1e-2 -s .4 -n 100 -S 1
