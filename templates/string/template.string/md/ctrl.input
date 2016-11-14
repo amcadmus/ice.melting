@@ -36,7 +36,7 @@ MDParameters {
 }
 
 OutputControl{
-	restart_freq			= 100000	// time frequency of restarting. unit: ps
+	restart_freq			= 0	// time frequency of restarting. unit: ps
 	restart_write_dirname		= "restart"	// directory for restarting files
 	javis_dump_freq			= 1000		// time frequency of javis dump. unit: ps
 	javis_dump_dirname		= "viz"		// javis dump directory name
