@@ -83,10 +83,14 @@ class StringForce (object) :
             for job in job_list :
                 stat = job.check_status ()
                 if stat == JobStatus.terminated :
-                    raise RuntimeError ("find terminated job. exit. should restart" )
+#                    raise RuntimeError ("find terminated job. exit. should restart" )
+                    old_job_id = job.get_job_id()
+                    new_job_id = job.submit ()
+#                    print ("find terminated job " + str(old_job_id) + " resubmitted as " + str(new_job_id))
+                    find_unfinish = True
                 if stat != JobStatus.finished :
                     find_unfinish = True
-                    break
+#                    break
             if find_unfinish == False :
                 return
             else :
