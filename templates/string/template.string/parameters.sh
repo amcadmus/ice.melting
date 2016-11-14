@@ -13,7 +13,7 @@ md_T=252.1
 md_tau_t=0.2
 md_tau_p=1.0
 md_ener_freq=0.04
-md_traj_freq=2.0
+md_traj_freq=$md_time
 
 # restraint settings
 res_k=1e6
