@@ -59,6 +59,15 @@ do
     key=`grep HarmonicRestraint top.input | head -n $ii | tail -n 1 | awk '{print $1}'`
     center_value=`echo $res_centers | cut -d ',' -f $ii`
     sed -i "/$key/s/CENTER_VALUE/$center_value/g" top.input
+    nkword=`echo $res_k | tr ',' ' ' | wc -w`
+    if test $nkword -eq 1; then
+	k_value=`echo $res_k | cut -d ',' -f 1`
+	echo 1 $nkword $k_value
+    else
+	k_value=`echo $res_k | cut -d ',' -f $ii`
+	echo 2 $nkword $k_value
+    fi
+    sed -i "/$key/s/K_VALUE/$k_value/g" top.input
 done
-sed -i "s/K_VALUE/$res_k/g" top.input
+
 sed -i "/numbers/s/=.*/= $nmol/g" top.input
