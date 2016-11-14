@@ -62,10 +62,8 @@ do
     nkword=`echo $res_k | tr ',' ' ' | wc -w`
     if test $nkword -eq 1; then
 	k_value=`echo $res_k | cut -d ',' -f 1`
-	echo 1 $nkword $k_value
     else
 	k_value=`echo $res_k | cut -d ',' -f $ii`
-	echo 2 $nkword $k_value
     fi
     sed -i "/$key/s/K_VALUE/$k_value/g" top.input
 done
