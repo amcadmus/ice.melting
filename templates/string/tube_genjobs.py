@@ -119,7 +119,8 @@ def generate_dir (select,
             
     os.chdir (base_dir)
 
-def gen_jobs (input_tube) :
+def gen_jobs (input_tube, 
+              radius_factor) :
     if not os.path.isfile (make_dir_name(0) + "/string.out") :
         raise RuntimeError ("no file " + make_dir_name(0) + "/string.out")
     if not os.path.isfile (input_tube) :
@@ -136,7 +137,7 @@ def gen_jobs (input_tube) :
     select = np.loadtxt (make_dir_name(0)  + "/string.out")
     gened = [select]
     unselect = np.loadtxt (input_tube)
-    radius = max_spacing * 1.1
+    radius = max_spacing * radius_factor
     logging.info ("selecting radius %s" % radius)
     step = 1
     while True :
@@ -144,6 +145,10 @@ def gen_jobs (input_tube) :
         select = ret[0]
         select_index = ret[1]
         unselect = ret[2]
+        if np.size(select) == 0 and np.size(unselect) != 0 :
+            msg = "select nothing due to small selecting radius, increase the radius factor and rerun."
+            logging.error (msg)
+            raise RuntimeError (msg)
         msg = "step %d. generated list len %d. numb selected nodes %d" % (step, len(gened), select.shape[0])
         print (msg)
         logging.info (msg)
@@ -158,6 +163,8 @@ def main ():
         description="*** Generate job dirs for a tube. ***")
     parser.add_argument('-i', '--input', default = "tube.out",
                         help='The tube. ')
+    parser.add_argument('-r', '--radius-factor', type=float, default = 1.5,
+                        help='The radius of selecting is equal to this factor multipled with the max mesh spacing. ')
     parser.add_argument('-t', '--md-time', type=int, default=20,
                         help='Physical time of MD simulation in unit of ps.')
     args = parser.parse_args()
@@ -167,7 +174,7 @@ def main ():
     sf = StringForce ("template.string")
     sf.replace ("template.string/parameters.sh", "md_time=.*", "md_time=" + str(args.md_time))
 
-    gen_jobs (args.input)
+    gen_jobs (args.input, args.radius_factor)
 
 if __name__ == "__main__":
     main ()
