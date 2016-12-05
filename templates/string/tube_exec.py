@@ -60,18 +60,11 @@ def wait_step (job_list) :
         for job in job_list :
             stat = job.check_status ()
             if stat == JobStatus.terminated :
-                logging.info ("find terminated job %s, wait and check again " % job.get_job_id())
-                time.sleep (10)
-                stat = job.check_status ()
-                if stat == JobStatus.terminated :
-                    msg = "find terminated job %s. exit. should restart" % job.get_job_id()
-                    logging.error (msg)
-                    raise RuntimeError (msg)
-                else :
-                    logging.info ("check passed")
+                old_job_id = job.get_job_id()
+                new_job_id = job.submit ()
+                find_unfinish = True
             if stat != JobStatus.finished :
                 find_unfinish = True
-                break
         if find_unfinish == False :
             return
         else :
