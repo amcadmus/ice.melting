@@ -81,6 +81,7 @@ def wait_step (job_list) :
     
 def exec_jobs (max_numb_job) :
     dirnames = glob.glob ("step.*")
+    dirnames.sort()
     if os.path.exists ("tag_fin_step") :
         fin_steps = [ line.rstrip('\n') for line in open("tag_fin_step") ]
         step_list = [ step for step in dirnames if step not in fin_steps ]
