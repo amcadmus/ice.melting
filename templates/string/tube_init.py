@@ -181,6 +181,8 @@ def gen_tube (string,
         if len(fixed_dim) == numb_dims :
             tube[ii] = tmp_tube
         else :
+            for jj in constrained_dim :
+                tmp_tube[jj] = smooth_string(0.5)[jj]
             tube[ii] = gen_point_var_dim (smooth_string, tmp_tube, fixed_dim)
             print ("%s %s" % (tmp_tube, tube[ii]))
     return tube
