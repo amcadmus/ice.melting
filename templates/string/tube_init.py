@@ -229,6 +229,8 @@ def main () :
 
     # save tube
     fp = open (args.output, "w")
+    for ii in args.constrained_dim :
+        mesh_spacing[ii] = -1.
     fp.write ("# mesh_spacing %s\n" % mesh_spacing)
     fp.close()
     fp = open (args.output, "ab")
