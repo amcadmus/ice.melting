@@ -17,23 +17,25 @@ def unique_rows (a) :
     unique_a = np.unique (a.view([('', a.dtype)] * a.shape[1]))
     return unique_a.view (a.dtype).reshape(unique_a.shape[0], a.shape[1])
 
-# def intep_string (string) :    
+def interp_string (string) :    
+    numb_node = string.shape[0]
+    alpha     = np.linspace (0, 1, numb_node)
+    alpha_seg = np.linspace (0, 1, numb_node)
+    alpha_seg[0] = 0
+    for jj in range (1, numb_node):
+        alpha_seg[jj] = np.linalg.norm (string[jj] - string[jj-1])
+    alpha = np.cumsum (alpha_seg)
+    alpha = alpha / alpha[-1]
+    return interp1d (alpha, string, axis=0, kind="cubic")
 
 class StringPointPointDist (object) :
     def __init__ (self, 
                   string,
                   point ) :
-        self.string = string
+        # self.string = string
         self.point = point
-        numb_node = string.shape[0]
-        alpha     = np.linspace (0, 1, numb_node)
-        alpha_seg = np.linspace (0, 1, numb_node)
-        alpha_seg[0] = 0
-        for jj in range (1, numb_node):
-            alpha_seg[jj] = np.linalg.norm (string[jj] - string[jj-1])
-        alpha = np.cumsum (alpha_seg)
-        alpha = alpha / alpha[-1]
-        self.smooth_string = interp1d (alpha, string, axis=0, kind="cubic")
+        # self.smooth_string = interp_string (string)
+        self.smooth_string = string
 
     def dist (self, 
               alpha) :
@@ -49,7 +51,7 @@ class StringPointDist (object) :
         self.string = string
         self.fixed_point = fixed_point
         self.fixed_dim = fixed_dim        
-        self.numb_dim = string.shape[1]
+        self.numb_dim = len(string(0))
         self.numb_var_dim = self.numb_dim - len(self.fixed_dim)
         self.var_dim = []
         for ii in range(self.numb_dim) :
@@ -171,13 +173,15 @@ def gen_tube (string,
             fixed_dim.append (ii)
     # print (fixed_dim)
 
+    smooth_string = interp_string (string)
+
     tube = tube_index.astype (float)
     for ii in range(tube.shape[0]) :
         tmp_tube = tube[ii] * mesh_spacing
         if len(fixed_dim) == numb_dims :
             tube[ii] = tmp_tube
         else :
-            tube[ii] = gen_point_var_dim (string, tmp_tube, fixed_dim)
+            tube[ii] = gen_point_var_dim (smooth_string, tmp_tube, fixed_dim)
             print ("%s %s" % (tmp_tube, tube[ii]))
     return tube
 
