@@ -41,8 +41,7 @@ void align_water (matrix box,
 void print_step (const string dir,
 		 const int step, 
 		 const double time, 
-		 const vector<int > & step_count_don, 
-		 const vector<int > & step_count_acc)
+		 const vector<double > & step_value)
 {
   char fname [1024];
   // sprintf (fname, "/step_%09d", step);
@@ -53,9 +52,9 @@ void print_step (const string dir,
     cerr << "cannot open file " << fpath << endl;
     exit (1);
   }
-  fprintf (fp, "# mol_idx numb_donator numb_acceptor\n");
-  for (unsigned ii = 0; ii < step_count_don.size(); ++ii){
-    fprintf (fp, "%d %d %d\n", ii, step_count_don[ii], step_count_acc[ii]);
+  fprintf (fp, "# mol_idx mole_Q_value\n");
+  for (unsigned ii = 0; ii < step_value.size(); ++ii){
+    fprintf (fp, "%d %f\n", ii, step_value[ii]);
   }
   fclose (fp);
 }
@@ -90,26 +89,18 @@ close_mol_defect (const int numb_mol)
 }
 
 void 
-print_mol_defect (const string dir,
-		  const int step, 
-		  const double time, 
-		  const vector<int > & step_count_don, 
-		  const vector<int > & step_count_acc, 
-		  const int func_numb_threads)
+print_mol (const string dir,
+	   const int step, 
+	   const double time, 
+	   const vector<double > & step_value, 
+	   const int func_numb_threads)
 {
 #pragma omp parallel for num_threads (func_numb_threads) 
-  for (unsigned ii = 0; ii < step_count_don.size(); ++ii){
+  for (unsigned ii = 0; ii < step_value.size(); ++ii){
     char name[1024];
     sprintf (name, "%s/mol_%06d", dir.c_str(), ii);
     FILE * fp = fopen (name, "a");
-    int value = 0;
-    if (step_count_don[ii] == 2 && step_count_acc[ii] == 2){
-      value = 0;
-    }
-    else {
-      value = 1;
-    }
-    fprintf (fp, "%09d %.3f %d\n", step, time, value);
+    fprintf (fp, "%09d %.3f %f\n", step, time, step_value[ii]);
     fclose (fp);
   }
 }
@@ -123,7 +114,7 @@ int main(int argc, char * argv[])
   int numb_mol_atom;
   int order;
   double rmin, rmax;
-  bool p_detail (false), p_mol_defect(false);
+  bool p_detail (false), p_mol(false);
   
   po::options_description desc ("Allow options");
   desc.add_options()
@@ -133,13 +124,13 @@ int main(int argc, char * argv[])
       ("r-min",   po::value<double > (&rmin)->default_value(0.31), "the min for r switch function")
       ("r-max",   po::value<double > (&rmax)->default_value(0.36), "the max for r switch function")
       ("order,l",   po::value<int > (&order)->default_value(6), "the order of the Steinhardt parameter")      
-      ("detail", "print the numb of H-bond of each molecule at each step")
-      ("mol-defect", "print if the molecule is in defect status. the history for each atom is printed")
+      ("detail", "print the Q value of each molecule at each step")
+      ("mol-value", "print the Q trajectory for each atom is printed")
       ("numb-mol-atom", po::value<int > (&numb_mol_atom)->default_value(4), "number of sites in the water molecule")
       ("numb-threads,t", po::value<int > (&func_numb_threads)->default_value(1), "number of threads")
       ("input,f",   po::value<string > (&ifile)->default_value ("traj.xtc"), "the input .xtc file")
-      ("output,o",  po::value<string > (&ofile)->default_value ("nhbond.out"), "the output file")
-      ("output-dir",  po::value<string > (&odir)->default_value ("nhbond"), "the output directory of H-bond detailed information");
+      ("output,o",  po::value<string > (&ofile)->default_value ("steinhardt.out"), "the output file")
+      ("output-dir",  po::value<string > (&odir)->default_value ("steinhardt"), "the output directory of Q value information");
   
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -151,8 +142,8 @@ int main(int argc, char * argv[])
   if (vm.count("detail")){
     p_detail = true;
   }
-  if (vm.count("mol-defect")){
-    p_mol_defect = true;
+  if (vm.count("mol-value")){
+    p_mol = true;
   }
 
   double rcut = rmax;
@@ -259,7 +250,7 @@ int main(int argc, char * argv[])
     cerr << "cannot open file " << ifile << endl;
     exit (1);
   }
-  if (p_mol_defect) {
+  if (p_mol) {
     open_mol_defect (odir, nmolecules);
   }
   while (read_xtc (fp, natoms, &step, &time, box, xx, &prec) == 0){
@@ -301,21 +292,22 @@ int main(int argc, char * argv[])
     for (int dd = 0; dd < 3; ++dd) vect_box[dd] = box[dd][dd];
 
     p_sa->deposite (clist, vect_box, coms);
-    // int tot_acc = 0;
-    // int tot_don = 0;
-    // for (int ii = 0; ii < nmol; ++ii){
-    //   tot_acc += hba.step_count_acc[ii];
-    //   tot_don += hba.step_count_don[ii];      
-    // }
-    // fprintf (fout, "%f\t %d \t %d\n", time, tot_don, tot_acc);
-    // if (p_detail){
-    //   print_step (odir, step, time, hba.step_count_don, hba.step_count_acc);
-    // }
-    // if (p_mol_defect){
-    //   print_mol_defect (odir, step, time, hba.step_count_don, hba.step_count_acc, func_numb_threads);
-    // }
+
+    // fprintf (fout, "%f\t %f\n", time, p_sa->getStepQ());
+    if (p_detail){
+      print_step (odir, step, time, p_sa->getStepMole());
+    }
+    if (p_mol){
+      print_mol (odir, step, time, p_sa->getStepMole(), func_numb_threads);
+    }
   }
   printf ("\n");
+
+  p_sa->average();
+  vector<double > avg = p_sa->getAvgMole();
+  for (unsigned ii = 0; ii < avg.size(); ++ii){
+    fprintf (fout, "%06d %f\n", ii, avg[ii]);
+  }
   
   free (xx);  
   fclose (fout);

@@ -13,6 +13,10 @@ public:
 			 const vector<double> box,
 			 const vector<vector<double > > & coms) = 0;
   virtual ~SteinhardtAnalysisBase () {};
+  virtual void average () = 0;
+  virtual double getStepQ () const = 0;
+  virtual vector<double > getStepMole () const = 0;
+  virtual vector<double > getAvgMole () const = 0;
 };
 
 template<unsigned LL>
@@ -29,10 +33,15 @@ public :
   virtual void deposite (const CellList & clist,
 			 const vector<double> box,
 			 const vector<vector<double > > & coms);
-  void average ();
-public :
+  virtual void average ();
+public:
+  virtual double getStepQ () const {return step_Q;};
+  virtual vector<double > getStepMole () const {return step_value;}
+  virtual vector<double > getAvgMole  () const {return avg_value;}
+private :
   vector<double > avg_value;
   vector<double > step_value;
+  double step_Q;
   int numb_step;
 private:
   // SteinhardtPairValue<LL>	spv;
@@ -65,6 +74,7 @@ reinit (const double rmin_,
   numb_step = 0;
   avg_value.clear();
   step_value.clear();
+  step_Q = 0;
   func_numb_threads = func_numb_threads_;
 }
 
@@ -74,10 +84,9 @@ SteinhardtAnalysis<LL> ::
 average ()
 {
   if (numb_step == 0) return;
-  // for (unsigned ii = 0; ii < avg_count_don.size(); ++ii){
-  //   avg_count_don[ii] /= double (numb_step);
-  //   avg_count_acc[ii] /= double (numb_step);
-  // }
+  for (unsigned ii = 0; ii < avg_value.size(); ++ii){
+    avg_value[ii] /= double (numb_step);
+  }
 }
 
 template<unsigned LL>
@@ -101,9 +110,11 @@ deposite (const CellList & clist,
   
   unsigned numb_water = waters.size();
   if (step_value.size() != numb_water) {
+    assert (numb_step == 0);
     step_value.resize (numb_water);
   }
   if (avg_value.size() != numb_water){
+    assert (numb_step == 0);
     avg_value.clear();
     avg_value.resize(numb_water);
     fill(avg_value.begin(), avg_value.end(), 0.);
@@ -215,8 +226,8 @@ deposite (const CellList & clist,
     l2_norm += pref * sum_value[kk] * sum_value[kk];
   }
   l2_norm = sqrt(l2_norm);
-  cout << "step " << numb_step << " l2 " << l2_norm / sum_coord << endl;
-
+  // cout << "step " << numb_step << " l2 " << l2_norm / sum_coord << endl;
+  step_Q = l2_norm / sum_coord;
 
   for (unsigned ii = 0; ii < numb_water; ++ii){
     step_value[ii] = 0.;
