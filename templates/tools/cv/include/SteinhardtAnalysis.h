@@ -38,6 +38,12 @@ public:
   virtual double getStepQ () const {return step_Q;};
   virtual vector<double > getStepMole () const {return step_value;}
   virtual vector<double > getAvgMole  () const {return avg_value;}
+private:
+  void computeMolValue (vector<vector<double > > & mol_value,
+			vector<double > & mol_coord,
+			const CellList & clist,
+			const vector<double> box,
+			const vector<vector<double > > & waters);  
 private :
   vector<double > avg_value;
   vector<double > step_value;
@@ -89,12 +95,25 @@ average ()
   }
 }
 
+// template<unsigned LL>
+// void
+// SteinhardtAnalysis<LL> :: 
+// localAvg (const vector<vector<double > > & avg_mol_value
+// 	  const CellList & clist,
+// 	  const vector<double> box,
+// 	  const vector<vector<double > > & waters,
+// 	  const vector<vector<double > > & mol_value) 
+// {
+// }
+
 template<unsigned LL>
 void
 SteinhardtAnalysis<LL> :: 
-deposite (const CellList & clist,
-	  const vector<double> box,
-	  const vector<vector<double > > & waters)
+computeMolValue (vector<vector<double > > & mol_value,
+		 vector<double > & mol_coord,
+		 const CellList & clist,
+		 const vector<double> box,
+		 const vector<vector<double > > & waters) 
 {
   double rup = rmax;
   int xiter = rup / clist.getCellSize().x;
@@ -107,20 +126,8 @@ deposite (const CellList & clist,
   assert (yiter * clist.getCellSize().y >= rup);
   assert (ziter * clist.getCellSize().z >= rup);
 
-  
+  // thread bufferes
   unsigned numb_water = waters.size();
-  if (step_value.size() != numb_water) {
-    assert (numb_step == 0);
-    step_value.resize (numb_water);
-  }
-  if (avg_value.size() != numb_water){
-    assert (numb_step == 0);
-    avg_value.clear();
-    avg_value.resize(numb_water);
-    fill(avg_value.begin(), avg_value.end(), 0.);
-  }
-  fill (step_value.begin(), step_value.end(), 0.);
-
   SteinhardtPairValue<LL> tmp_spv (rmin, rmax);
   vector<vector<vector<double > > > th_mol_value (func_numb_threads);
   vector<vector<double > >	    th_mol_coord (func_numb_threads);
@@ -133,10 +140,10 @@ deposite (const CellList & clist,
     th_mol_coord[ii].resize (numb_water);
     fill (th_mol_coord[ii].begin(), th_mol_coord[ii].end(), 0.);
   }
-  
+
+  // loop
   IntVectorType nCell = clist.getNumCell();
   unsigned cellIndexUpper = unsigned(nCell.x * nCell.y * nCell.z);
-
 #pragma omp parallel for num_threads (func_numb_threads) 
   for (int tt = 0; tt < func_numb_threads; ++tt){ 
     SteinhardtPairValue<LL>	spv (rmin, rmax);
@@ -189,9 +196,10 @@ deposite (const CellList & clist,
     }
   }
 
-  vector<vector<double > > mol_value (numb_water);
+  mol_value.resize (numb_water);
   for (unsigned jj = 0; jj < mol_value.size(); ++jj){
-    mol_value[jj].resize (tmp_spv.valueDim(), 0.);
+    mol_value[jj].resize (tmp_spv.valueDim());
+    fill (mol_value[jj].begin(), mol_value[jj].end(), 0.);
   }
 #pragma omp parallel for num_threads (func_numb_threads) 
   for (unsigned jj = 0; jj < mol_value.size(); ++jj){
@@ -201,14 +209,42 @@ deposite (const CellList & clist,
       }
     }
   }
-  vector<double > mol_coord (numb_water, 0.);
+  mol_coord.resize (numb_water); 
+  fill (mol_coord.begin(), mol_coord.end(), 0.);
 #pragma omp parallel for num_threads (func_numb_threads) 
   for (unsigned jj = 0; jj < mol_coord.size(); ++jj){
     for (int tt = 0; tt < func_numb_threads; ++tt){
       mol_coord[jj] += th_mol_coord[tt][jj];
     }
   }  
+}
+
+
+template<unsigned LL>
+void
+SteinhardtAnalysis<LL> :: 
+deposite (const CellList & clist,
+	  const vector<double> box,
+	  const vector<vector<double > > & waters)
+{  
+  unsigned numb_water = waters.size();
+  if (step_value.size() != numb_water) {
+    assert (numb_step == 0);
+    step_value.resize (numb_water);
+  }
+  if (avg_value.size() != numb_water){
+    assert (numb_step == 0);
+    avg_value.clear();
+    avg_value.resize(numb_water);
+    fill(avg_value.begin(), avg_value.end(), 0.);
+  }
+  fill (step_value.begin(), step_value.end(), 0.);
+
+  vector<vector<double > > mol_value;
+  vector<double > mol_coord;
+  computeMolValue (mol_value, mol_coord, clist, box, waters);
   
+  SteinhardtPairValue<LL> tmp_spv (rmin, rmax);
   vector<double > sum_value (tmp_spv.valueDim(), 0.);
   for (unsigned kk = 0; kk < sum_value.size(); ++kk){
     for (unsigned jj = 0; jj < mol_value.size(); ++jj){
