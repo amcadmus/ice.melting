@@ -114,7 +114,7 @@ int main(int argc, char * argv[])
   int numb_mol_atom;
   int order;
   double rmin, rmax;
-  bool p_detail (false), p_mol(false);
+  bool p_detail (false), p_mol(false), do_avg(false);
   
   po::options_description desc ("Allow options");
   desc.add_options()
@@ -124,6 +124,7 @@ int main(int argc, char * argv[])
       ("r-min",   po::value<double > (&rmin)->default_value(0.31), "the min for r switch function")
       ("r-max",   po::value<double > (&rmax)->default_value(0.36), "the max for r switch function")
       ("order,l",   po::value<int > (&order)->default_value(6), "the order of the Steinhardt parameter")      
+      ("loc-avg,a", "the local averaged Steinhardt parameter due to Leichner and Dellago")      
       ("detail", "print the Q value of each molecule at each step")
       ("mol-value", "print the Q trajectory for each atom is printed")
       ("numb-mol-atom", po::value<int > (&numb_mol_atom)->default_value(4), "number of sites in the water molecule")
@@ -144,6 +145,9 @@ int main(int argc, char * argv[])
   }
   if (vm.count("mol-value")){
     p_mol = true;
+  }
+  if (vm.count("loc-avg")){
+    do_avg = true;
   }
 
   double rcut = rmax;
@@ -291,7 +295,7 @@ int main(int argc, char * argv[])
     vector<double > vect_box(3);
     for (int dd = 0; dd < 3; ++dd) vect_box[dd] = box[dd][dd];
 
-    p_sa->deposite (clist, vect_box, coms);
+    p_sa->deposite (clist, vect_box, coms, do_avg);
 
     // fprintf (fout, "%f\t %f\n", time, p_sa->getStepQ());
     if (p_detail){

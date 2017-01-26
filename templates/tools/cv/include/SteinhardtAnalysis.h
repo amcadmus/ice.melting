@@ -11,7 +11,8 @@ class SteinhardtAnalysisBase
 public:
   virtual void deposite (const CellList & clist,
 			 const vector<double> box,
-			 const vector<vector<double > > & coms) = 0;
+			 const vector<vector<double > > & coms,
+			 const bool do_avg = false) = 0;
   virtual ~SteinhardtAnalysisBase () {};
   virtual void average () = 0;
   virtual double getStepQ () const = 0;
@@ -32,7 +33,14 @@ public :
 	       const int func_numb_threads = 1);
   virtual void deposite (const CellList & clist,
 			 const vector<double> box,
-			 const vector<vector<double > > & coms);
+			 const vector<vector<double > > & coms,
+			 const bool do_avg);
+  void deposite_mol (const CellList & clist,
+		     const vector<double> box,
+		     const vector<vector<double > > & waters);
+  void deposite_avg (const CellList & clist,
+		     const vector<double> box,
+		     const vector<vector<double > > & waters);
   virtual void average ();
 public:
   virtual double getStepQ () const {return step_Q;};
@@ -44,6 +52,11 @@ private:
 			const CellList & clist,
 			const vector<double> box,
 			const vector<vector<double > > & waters);  
+  void avgMolValue (vector<vector<double > > & avg_mol_q,
+		    const CellList & clist,
+		    const vector<double> box,
+		    const vector<vector<double > > & waters,
+		    const vector<vector<double > > & mol_q) ;
 private :
   vector<double > avg_value;
   vector<double > step_value;
@@ -219,13 +232,116 @@ computeMolValue (vector<vector<double > > & mol_value,
   }  
 }
 
+template<unsigned LL>
+void
+SteinhardtAnalysis<LL> :: 
+avgMolValue (vector<vector<double > > & avg_mol_q,
+	     const CellList & clist,
+	     const vector<double> box,
+	     const vector<vector<double > > & waters,
+	     const vector<vector<double > > & mol_q) 
+{
+  double rup = rmax;
+  double rup2 = rmax * rmax;
+  int xiter = rup / clist.getCellSize().x;
+  if (xiter * clist.getCellSize().x < rup) xiter ++;
+  int yiter = rup / clist.getCellSize().y;
+  if (yiter * clist.getCellSize().y < rup) yiter ++;
+  int ziter = rup / clist.getCellSize().z;
+  if (ziter * clist.getCellSize().z < rup) ziter ++;
+  assert (xiter * clist.getCellSize().x >= rup);
+  assert (yiter * clist.getCellSize().y >= rup);
+  assert (ziter * clist.getCellSize().z >= rup);
+
+  unsigned numb_water = waters.size();
+  unsigned ldof = mol_q[0].size();
+  vector<unsigned > count_add (numb_water, 0);
+  avg_mol_q.resize(numb_water);
+  for (unsigned ii = 0; ii < avg_mol_q.size(); ++ii){
+    avg_mol_q[ii].resize (ldof);
+    fill (avg_mol_q[ii].begin(), avg_mol_q[ii].end(), 0.);
+  }
+  // loop
+  IntVectorType nCell = clist.getNumCell();
+  unsigned cellIndexUpper = unsigned(nCell.x * nCell.y * nCell.z);
+#pragma omp parallel for num_threads (func_numb_threads) 
+  for (int tt = 0; tt < func_numb_threads; ++tt){ 
+    for (unsigned iCellIndex = tt;
+	 iCellIndex < cellIndexUpper;
+	 iCellIndex += func_numb_threads){
+      const vector<unsigned> & iCellList (clist.getList()[iCellIndex]);
+      vector<unsigned > neighborCellIndex =
+	  clist.neighboringCellIndex (iCellIndex, IntVectorType (xiter, yiter, ziter));
+      // loop of all neighboring cells of i
+      for (unsigned iNeighborCellIndex = 0;
+	   iNeighborCellIndex < neighborCellIndex.size();
+	   ++iNeighborCellIndex){
+	unsigned jCellIndex = neighborCellIndex[iNeighborCellIndex];
+	const vector<unsigned> & jCellList (clist.getList()[jCellIndex]);
+	for (unsigned ii = 0; ii < iCellList.size(); ++ii){
+	  int i_index = iCellList[ii];
+	  for (unsigned jj = 0; jj < jCellList.size(); ++jj){
+	    // if (sameCell && ii == jj) continue;	    
+	    int j_index = jCellList[jj];
+	    const vector<double > & io(waters[i_index]);
+	    const vector<double > & jo(waters[j_index]);	    
+	    vector<double > diff(3);
+	    for (int dd = 0; dd < 3; ++dd) diff[dd] = jo[dd] - io[dd];
+	    vector<int > shift(3, 0);
+	    for (int dd = 0; dd < 3; ++dd){
+	      if      (diff[dd] < -.5 * box[dd]) shift[dd] += 1;
+	      else if (diff[dd] >= .5 * box[dd]) shift[dd] -= 1;
+	    }
+	    for (int dd = 0; dd < 3; ++dd){
+	      diff[dd] += box[dd] * shift[dd];
+	    }
+	    double r2 = diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2];
+	    if (r2 < rup2){
+	      // deposite to i
+	      for (unsigned kk = 0; kk < avg_mol_q[i_index].size(); ++kk){
+		avg_mol_q[i_index][kk] += mol_q[j_index][kk];
+	      }
+	      count_add[i_index] ++;
+	    }
+	  }
+	}
+      }
+    }
+  }
+
+  for (unsigned ii = 0; ii < avg_mol_q.size(); ++ii){
+    for (unsigned kk = 0; kk < avg_mol_q[ii].size(); ++kk){
+      avg_mol_q[ii][kk] /= double(count_add[ii]);
+    }
+  }
+
+  // for (unsigned ii = 0; ii < avg_mol_q.size(); ++ii){
+  //   cout << ii << " " << count_add[ii] << endl;
+  // }
+}
 
 template<unsigned LL>
 void
 SteinhardtAnalysis<LL> :: 
 deposite (const CellList & clist,
 	  const vector<double> box,
-	  const vector<vector<double > > & waters)
+	  const vector<vector<double > > & waters, 
+	  const bool do_avg)
+{  
+  if (do_avg){
+    deposite_avg (clist, box, waters);
+  }
+  else {
+    deposite_mol (clist, box, waters);
+  }
+}
+
+template<unsigned LL>
+void
+SteinhardtAnalysis<LL> :: 
+deposite_mol (const CellList & clist,
+	      const vector<double> box,
+	      const vector<vector<double > > & waters)
 {  
   unsigned numb_water = waters.size();
   if (step_value.size() != numb_water) {
@@ -257,8 +373,7 @@ deposite (const CellList & clist,
   }  
   double l2_norm (0);
   for (unsigned kk = 0; kk < sum_value.size(); ++kk){
-    double pref = 2.;
-    if (kk == 0 || kk == 1) pref = 1.;
+    double pref = 2.; if (kk == 0 || kk == 1) pref = 1.;
     l2_norm += pref * sum_value[kk] * sum_value[kk];
   }
   l2_norm = sqrt(l2_norm);
@@ -273,7 +388,61 @@ deposite (const CellList & clist,
     }
     for (unsigned kk = 0; kk < mol_value[ii].size(); ++kk){
       double tmp = mol_value[ii][kk] / mol_coord[ii];
-      step_value[ii] += tmp * tmp;
+      double pref = 2.; if (kk == 0 || kk == 1) pref = 1.;
+      step_value[ii] += pref * tmp * tmp;
+    }
+    step_value[ii] = sqrt(step_value[ii]);
+  }
+  for (unsigned ii = 0; ii < numb_water; ++ii){
+    avg_value[ii] += step_value[ii];
+  }
+
+  numb_step ++;
+}
+
+template<unsigned LL>
+void
+SteinhardtAnalysis<LL> :: 
+deposite_avg (const CellList & clist,
+	      const vector<double> box,
+	      const vector<vector<double > > & waters)
+{  
+  unsigned numb_water = waters.size();
+  if (step_value.size() != numb_water) {
+    assert (numb_step == 0);
+    step_value.resize (numb_water);
+  }
+  if (avg_value.size() != numb_water){
+    assert (numb_step == 0);
+    avg_value.clear();
+    avg_value.resize(numb_water);
+    fill(avg_value.begin(), avg_value.end(), 0.);
+  }
+  fill (step_value.begin(), step_value.end(), 0.);
+
+  vector<vector<double > > mol_value;
+  vector<double > mol_coord;
+  computeMolValue (mol_value, mol_coord, clist, box, waters);
+  for (unsigned ii = 0; ii < numb_water; ++ii){
+    if (mol_coord[ii] == 0){
+      cerr << "coordination number of mol " << ii << " is 0, some thing maybe wrong" << endl;
+      continue;
+    }
+    for (unsigned kk = 0; kk < mol_value[ii].size(); ++kk){
+      mol_value[ii][kk] = mol_value[ii][kk] / mol_coord[ii];
+    }
+  }
+  // for (unsigned ii = 0; ii < mol_value.size(); ++ii){
+  //   cout << ii << " a " << mol_coord[ii] << endl;;
+  // }
+  vector<vector<double > > avg_mol_q ;
+  avgMolValue (avg_mol_q, clist, box, waters, mol_value);  
+
+  for (unsigned ii = 0; ii < numb_water; ++ii){
+    step_value[ii] = 0.;
+    for (unsigned kk = 0; kk < mol_value[ii].size(); ++kk){
+      double pref = 2.; if (kk == 0 || kk == 1) pref = 1.;
+      step_value[ii] += pref * avg_mol_q[ii][kk] * avg_mol_q[ii][kk];
     }
     step_value[ii] = sqrt(step_value[ii]);
   }
