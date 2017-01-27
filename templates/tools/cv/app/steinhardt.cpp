@@ -153,7 +153,7 @@ int main(int argc, char * argv[])
   double rcut = rmax;
   cellSize = rcut + 1e-6;
   cout << "###################################################" << endl;
-  cout << "# computes the H-bond" << endl;
+  cout << "# computes the local Steinhardt parameter" << endl;
   cout << "# begin->end: " << begin << " " << end << endl;
   cout << "# numb sites in water: " << numb_mol_atom << endl;
   cout << "# input: " << ifile << endl;
