@@ -6,6 +6,14 @@ import numpy as np
 import subprocess as sp
 import glob
 
+def write_file (filename,
+                data) :
+    fp = open (filename, "w")
+    numb = len(data)
+    for ii in range (numb) :
+        fp.write ("%06d %f\n" % (ii, data[ii]))
+    fp.close ()
+
 def main () :
     parser = argparse.ArgumentParser(
         description="*** convert mole traj files matches dir/mol_* to step info in the same directory. ***")
@@ -45,13 +53,10 @@ def main () :
 
     # print
     assert (nsteps == matrix.shape[1])
-    mat_print = np.zeros ((nmols,2))
-    mat_print[:,0] = range (0, nmols)
     for ii in range (0,nsteps) :
         filename = myin + "/step_%09d" % steps[ii]
         print ("# print to  file %s" % filename, end='\r')
-        mat_print[:,1] = matrix[:,ii]
-        np.savetxt (filename, mat_print)
+        write_file (filename, matrix[:,ii])
     print ("")
     
 
