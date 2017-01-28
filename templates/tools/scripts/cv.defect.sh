@@ -91,15 +91,18 @@ script=$out_vmd
 cat > $script <<EOF
 set mol_id [ mol new $file_conf ]
 mol addfile $file_traj waitfor all \$mol_id
+set sel [atomselect top all] 
+\$sel set radius 0.8
 mol addrep \$mol_id
 mol addrep \$mol_id
-mol modselect 0 \$mol_id all
+mol modselect 0 \$mol_id not name MW 
 mol modselect 1 \$mol_id none
 mol modselect 2 \$mol_id none
 mol modstyle 0 \$mol_id hbonds
 mol modstyle 1 \$mol_id bonds
 mol modstyle 2 \$mol_id vdw
 display projection orthographic
+display height 4
 rotate x by $rot_angle
 animate goto 0
 EOF
@@ -146,12 +149,12 @@ do
     printf "$ii count $count_frame1 $count_frame2 \r"
     echo "$idx_step $count_frame1 $count_frame2 " >> $out_file
     if test $count_frame1 -ne 0; then
-	echo "mol modselect 1 \$mol_id $list1" >> $script
+	echo "mol modselect 1 \$mol_id not name MW and ( $list1 )" >> $script
     else
 	echo "mol modselect 1 \$mol_id none" >> $script
     fi
     if test $count_frame2 -ne 0; then
-	echo "mol modselect 2 \$mol_id $list2" >> $script
+	echo "mol modselect 2 \$mol_id not name MW and ( $list2 )" >> $script
     else
 	echo "mol modselect 2 \$mol_id none" >> $script
     fi
