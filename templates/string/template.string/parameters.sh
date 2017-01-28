@@ -1,7 +1,7 @@
 # system conf setting (should not be changed if build dir with dependency)
 system_seed_dir=md
 # system top setting
-system_top_style=100-002
+system_top_style=100-002-101
 # system conf
 system_start_conf=conf.sol.003456.gro
 
@@ -16,7 +16,7 @@ md_ener_freq=0.04
 md_traj_freq=$md_time
 
 # restraint settings
-res_k=1e6
+res_k=1e6,1e6,1e6,1e6
 #res_centers=0.410,0.464,0.632
 res_centers=0.012,0.028,0.021
 
