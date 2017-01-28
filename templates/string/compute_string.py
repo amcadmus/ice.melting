@@ -94,7 +94,7 @@ def compute_string (compute_force,              # function for computing the for
                     start_iter = 0
                     ):            
     """ compute the string"""
-    factor_Q = 1.5
+    factor_Q = 1.1
     numb_node = string.shape[0]
     dim = np.size(string[0])
     # check validity of the inputs
@@ -121,7 +121,7 @@ def compute_string (compute_force,              # function for computing the for
         alpha = np.cumsum (alpha_seg)
         alpha = alpha / alpha[-1]
         # reparameterize the string if needed
-        smooth_str = interp1d (alpha, string, axis=0, kind="cubic")
+        smooth_str = interp1d (alpha, string, axis=0, kind="linear")
         if np.max (alpha_seg[1:]) / np.min(alpha_seg[1:]) > factor_Q :
             string = smooth_str (alpha_eq)
             logging.info ("string %06d: resampled .", ii+1)
