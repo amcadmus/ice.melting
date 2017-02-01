@@ -32,7 +32,8 @@ if test ! -d $output; then
     mkdir -p $output
 fi
 
-for ii in $input/mol_*;
+target=$input/mol_*
+for ii in $target;
 do
     ofile=`echo $ii | sed "s;$input;$output;g"`
     printf "# convert $ii to $ofile \r"
