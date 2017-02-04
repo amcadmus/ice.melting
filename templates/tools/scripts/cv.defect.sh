@@ -10,6 +10,7 @@ function usage () {
 	-q|--loc-q  dir  (steinhardt)		tell the dir of the CV. 
        -t1|--thres1 val  (0.358)		tell the threshold 1 of the CV. 
        -t1|--thres2 val  (0.267)		tell the threshold 2 of the CV. 
+       -ot|--o-tcl  dir  (fig.qdef)		output dir for frame tcl script
 EOF
 }
 
@@ -27,13 +28,42 @@ function check_folder () {
     fi
 }
 
+function write_tcl_head () {    
+    _my_file_name=$1
+    cat > $_my_file_name <<EOF
+set mol_id [ mol new $file_conf ]
+mol addfile $file_traj waitfor all \$mol_id
+set sel [atomselect top all] 
+\$sel set radius 0.6
+mol addrep \$mol_id
+mol addrep \$mol_id
+mol modselect 0 \$mol_id not name MW 
+mol modselect 1 \$mol_id none
+mol modselect 2 \$mol_id none
+mol modstyle 0 \$mol_id hbonds
+mol modstyle 1 \$mol_id vdw
+mol modstyle 2 \$mol_id vdw
+mol modcolor 1 \$mol_id ResType
+display projection orthographic
+display height 4
+rotate x by $rot_angle
+animate goto 0
+EOF
+}
+
+function write_tcl_light_head () {    
+    _my_file_name=$1
+    cat > $_my_file_name <<EOF
+EOF
+}
+
 file_conf=conf.gro
 file_traj=traj.xtc
 file_q=steinhardt
 thres1=0.358
 thres2=0.267
-out_folder=figs.qdef
 rot_angle=0
+out_tcl_dir=figs.qdef
 
 # if [ $# -eq 0 ]; then
 #     usage
@@ -63,6 +93,10 @@ do
 	    thres2=$2
 	    shift
 	    ;;
+	-ot|--o-tcl)
+	    out_tcl_dir=$2
+	    shift
+	    ;;
 	-h|--help|*)
 	    usage
 	    exit
@@ -80,32 +114,17 @@ echo thres1: $thres1
 echo thres2: $thres2
 echo out vmd script: $out_vmd
 echo out def count : $out_file
+echo out frame vmd script dir: $out_tcl_dir
 
 check_file $file_conf
 check_file $file_traj
 check_folder $file_q
+check_folder $out_tcl_dir
 
 targets=`ls $file_q | grep ^step_`
 script=$out_vmd
 
-cat > $script <<EOF
-set mol_id [ mol new $file_conf ]
-mol addfile $file_traj waitfor all \$mol_id
-set sel [atomselect top all] 
-\$sel set radius 0.8
-mol addrep \$mol_id
-mol addrep \$mol_id
-mol modselect 0 \$mol_id not name MW 
-mol modselect 1 \$mol_id none
-mol modselect 2 \$mol_id none
-mol modstyle 0 \$mol_id hbonds
-mol modstyle 1 \$mol_id bonds
-mol modstyle 2 \$mol_id vdw
-display projection orthographic
-display height 4
-rotate x by $rot_angle
-animate goto 0
-EOF
+write_tcl_head $script
 
 count=1
 rgbs=""
@@ -117,7 +136,14 @@ echo "{if (\$2 < $thres2) {print \$1}}" > $prog2
 for ii in $targets; 
 do
     output="frame_`printf %09d $count`_$ii"
+    step_script="$out_tcl_dir/frame_`printf %09d $count`.tcl"
+    if test $count -eq 1; then
+	write_tcl_head $step_script
+    else
+	write_tcl_light_head $step_script
+    fi
     echo "animate goto $count" >> $script
+    echo "animate goto $count" >> $step_script
 #    echo "wait 1" >> $script
     count_frame1=0
     list1=""
@@ -150,13 +176,17 @@ do
     echo "$idx_step $count_frame1 $count_frame2 " >> $out_file
     if test $count_frame1 -ne 0; then
 	echo "mol modselect 1 \$mol_id not name MW and ( $list1 )" >> $script
+	echo "mol modselect 1 \$mol_id not name MW and ( $list1 )" >> $step_script
     else
 	echo "mol modselect 1 \$mol_id none" >> $script
+	echo "mol modselect 1 \$mol_id none" >> $step_script
     fi
     if test $count_frame2 -ne 0; then
 	echo "mol modselect 2 \$mol_id not name MW and ( $list2 )" >> $script
+	echo "mol modselect 2 \$mol_id not name MW and ( $list2 )" >> $step_script
     else
 	echo "mol modselect 2 \$mol_id none" >> $script
+	echo "mol modselect 2 \$mol_id none" >> $step_script
     fi
     echo "render Tachyon OUT_FOLDER/$output.tachyon" >> $script
     count=$(($count+1))
