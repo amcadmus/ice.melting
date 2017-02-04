@@ -111,7 +111,6 @@ int main(int argc, char * argv[])
   string ifile, ofile, odir;
   int func_numb_threads;
   int numb_mol_atom;
-  int order;
   bool p_detail (false), p_mol(false);
   
   po::options_description desc ("Allow options");
@@ -119,7 +118,6 @@ int main(int argc, char * argv[])
       ("help,h", "print this message")
       ("begin,b", po::value<double > (&begin)->default_value(0.f), "start time")
       ("end,e",   po::value<double > (&end  )->default_value(0.f), "end   time")
-      ("order,l",   po::value<int > (&order)->default_value(6), "the order of the Steinhardt parameter")      
       ("detail", "print the displacement of each molecule at each step")
       ("mol-value", "print the displacement trajectory for each atom")
       ("numb-mol-atom", po::value<int > (&numb_mol_atom)->default_value(4), "number of sites in the water molecule")
