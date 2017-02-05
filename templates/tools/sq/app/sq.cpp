@@ -57,6 +57,44 @@ void print_step (const string dir,
   fclose (fp);
 }
 
+void 
+statistic_sq (vector<double > & stat,
+	      vector<unsigned > & count,
+	      const double hh,
+	      const vector<double > & qq,
+	      const vector<double > & sq)
+{
+  unsigned nbin = stat.size();
+  assert (nbin == count.size());
+  unsigned nthreads = omp_get_num_threads() ;
+  
+  vector<vector<unsigned > > thread_count (nthreads);
+  vector<vector<double > > thread_stat (nthreads);
+#pragma omp parallel for
+  for (unsigned tt = 0; tt < nthreads; ++tt){
+    thread_stat[tt].resize (nbin,0.);
+    thread_count[tt].resize (nbin,0);
+  }
+  
+#pragma omp parallel for
+  for (unsigned tt = 0; tt < nthreads; ++tt){
+    for (unsigned ii = 0; ii < qq.size(); ++ii){
+      int idx = qq[ii] / hh;
+      if (idx >= int(nbin) || idx < 0) continue;
+      thread_stat[tt][idx] += sq[ii];
+      thread_count[tt][idx] ++;
+    }
+  }
+
+#pragma omp parallel for
+  for (unsigned ii = 0; ii < nbin; ++ii){
+    for (unsigned tt = 0; tt < nthreads; ++tt){
+      stat[ii] += thread_stat[tt][ii];
+      count[ii] += thread_count[tt][ii];
+    }
+  }  
+}
+
 
 int main(int argc, char * argv[])
 {
@@ -66,6 +104,8 @@ int main(int argc, char * argv[])
   int numb_mol_atom;
   unsigned KK[3];
   bool p_detail (false);
+  double qbin (0.05);
+  double qmax (45);
   
   po::options_description desc ("Allow options");
   desc.add_options()
@@ -73,6 +113,8 @@ int main(int argc, char * argv[])
       ("begin,b", po::value<double > (&begin)->default_value(0.f), "start time")
       ("end,e",   po::value<double > (&end  )->default_value(0.f), "end   time")
       ("detail", "print the displacement of each molecule at each step")
+      ("q-bin",   po::value<double > (&qbin )->default_value(0.05), "the bin size of sq computing ")
+      ("q-max",   po::value<double > (&qmax )->default_value(45), "the range of print sq, default for water O-H bond ")
       ("kx", po::value<unsigned > (&KK[0])->default_value(12), "number of modes in dir x")
       ("ky", po::value<unsigned > (&KK[1])->default_value(12), "number of modes in dir y")
       ("kz", po::value<unsigned > (&KK[2])->default_value(12), "number of modes in dir z")
@@ -97,6 +139,8 @@ int main(int argc, char * argv[])
   cout << "# computes the displacement of molecules" << endl;
   cout << "# begin->end: " << begin << " " << end << endl;
   cout << "# numb sites in water: " << numb_mol_atom << endl;
+  cout << "# qmax: " << qmax << endl;
+  cout << "# qbin: " << qbin << endl;
   cout << "# input: " << ifile << endl;
   cout << "# output: " << ofile << endl;
   if (p_detail){
@@ -148,7 +192,10 @@ int main(int argc, char * argv[])
   StructureFactor sf (KK, nmolecules, func_numb_threads);
   vector<double > nq;
   vector<complex<double > > sq;
+  vector<double > norm_sq;
   vector<pair<double, double > > sq_print;
+  vector<double > qstat (qmax / qbin + 1, 0.);
+  vector<unsigned > countstat (qmax / qbin + 1, 0);
 
   int countread = 0;
   if (p_detail){
@@ -203,13 +250,12 @@ int main(int argc, char * argv[])
     
     sf.getNormQ (nq, mybox);
     sf.compute (sq, coms, mybox);
-    sq_print.resize (nq.size());
-    for (unsigned ii = 0; ii < nq.size(); ++ii){
-      sq_print[ii].first = nq[ii];
-      sq_print[ii].second = norm(sq[ii]) / double(nmol);
-      // sq_print[ii].second = norm(sq[ii]);
+    norm_sq.resize (sq.size());
+#pragma omp parallel for
+    for (unsigned ii = 0; ii < sq.size(); ++ii){
+      norm_sq[ii] = norm(sq[ii]) / double(nmol);
     }
-    sort (sq_print.begin(), sq_print.end());
+    statistic_sq (qstat, countstat, qbin, nq, norm_sq);
     
     // fprintf (fout, "%f\t %f\n", time, p_sa->getStepQ());
     // if (p_detail){
@@ -218,14 +264,19 @@ int main(int argc, char * argv[])
   }
   printf ("\n");
 
+  for (unsigned ii = 0; ii < qstat.size(); ++ii){
+    if (countstat[ii] == 0) continue;
+    qstat[ii] = qstat[ii] / double(countstat[ii]);
+  }
+
   FILE *fout = fopen (ofile.c_str(), "w");
   if (fout == NULL){
     cerr << "cannot open file " << ofile << endl;
     exit (1);
   }
-  for (unsigned ii = 0; ii < sq_print.size(); ++ii){
+  for (unsigned ii = 0; ii < qstat.size(); ++ii){
     if (ii == 0) continue;
-    fprintf (fout, "%f %f\n", sq_print[ii].first, sq_print[ii].second);
+    fprintf (fout, "%f %f\n", (ii+0.5) * qbin, qstat[ii]);
   }
   fclose (fout);
 

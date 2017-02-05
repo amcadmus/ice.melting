@@ -3,6 +3,7 @@
 #include <complex>
 #include <vector>
 #include <cassert>
+#include <omp.h>
 
 using namespace std;
 
@@ -42,6 +43,7 @@ StructureFactor (const unsigned * KK,
 		 const unsigned nmol, 
 		 const unsigned func_numb_threads)
 {
+    // printf("nthreads = " NFFT__D__ "\n", NFFT(get_num_threads)());
   init (KK, nmol, func_numb_threads);
 }
 
@@ -49,6 +51,7 @@ StructureFactor::
 ~StructureFactor ()
 {
   NFFT(finalize)(&p);
+  // FFTW(cleanup_threads)();
 }
 
 void
@@ -62,6 +65,7 @@ init (const unsigned * KK_,
   nmol = nmol_;
   func_numb_threads = func_numb_threads_;
 
+  // FFTW(init_threads)();
   NFFT(init_3d)(&p, KK[0], KK[1], KK[2], nmol);  
   NFFT(vrand_shifted_unit_double)(p.x, p.d * p.M_total);
   if (p.flags & PRE_ONE_PSI) NFFT(precompute_one_psi)(&p);
@@ -86,18 +90,19 @@ getNormQ (vector<double > & q,
   vector<double > boxi(3);
   for (unsigned dd = 0; dd < 3; ++dd) boxi[dd] = 1./box[dd];
   q.resize (NK);
-  vector<double >::iterator iter = q.begin();
+#pragma omp parallel for
   for (int ii = 0; ii < int(KK[0]); ++ii){
     for (int jj = 0; jj < int(KK[1]); ++jj){
       for (int kk = 0; kk < int(KK[2]); ++kk){
 	double qq[3];
+	int idx = kk + KK[2] * (jj + KK[1] * ii);
 	// qq[0] = ii * 2 * M_PI * boxi[0];
 	// qq[1] = jj * 2 * M_PI * boxi[1];
 	// qq[2] = kk * 2 * M_PI * boxi[2];
 	qq[0] = (ii-int(KK[0]/2)) * 2 * M_PI * boxi[0];
 	qq[1] = (jj-int(KK[1]/2)) * 2 * M_PI * boxi[1];
 	qq[2] = (kk-int(KK[2]/2)) * 2 * M_PI * boxi[2];
-	*(iter ++) = sqrt (qq[0] * qq[0] + qq[1] * qq[1] + qq[2] * qq[2]);
+	q[idx] = sqrt (qq[0] * qq[0] + qq[1] * qq[1] + qq[2] * qq[2]);
       }
     }
   }
@@ -113,14 +118,19 @@ normalize_coord (vector<double > & coord,
   assert (coms.size() == nmol);
   vector<double > boxi(3);
   for (unsigned dd = 0; dd < 3; ++dd) boxi[dd] = 1./box[dd];
-  vector<double >::iterator iter = coord.begin();
+#pragma omp parallel for
   for (unsigned ii = 0; ii < coms.size(); ++ii){
     for (unsigned dd = 0; dd < 3; ++dd){
-      *iter = coms[ii][dd] * boxi[dd] ;
-      if      (*iter <  0) *iter += 1;
-      else if (*iter >= 1) *iter -= 1;
-      *iter -= 0.5;
-      iter ++;
+      // *iter = coms[ii][dd] * boxi[dd] ;
+      // if      (*iter <  0) *iter += 1;
+      // else if (*iter >= 1) *iter -= 1;
+      // *iter -= 0.5;
+      // iter ++;
+      double tmp = coms[ii][dd] * boxi[dd] ;
+      if      (tmp <  0) tmp += 1;
+      else if (tmp >= 1) tmp -= 1;
+      tmp -= 0.5;
+      coord[ii*3+dd] = tmp;
     }
   }
 }
@@ -133,19 +143,15 @@ compute (vector<complex<double > > & sq,
 {
   vector<double > coord;
   normalize_coord (coord, coms, box);
-  // for (unsigned ii = 0; ii < nmol; ++ii){
-  //   cout << coord[3*ii] << " " 
-  // 	 << coord[3*ii+1] << " " 
-  // 	 << coord[3*ii+2] << " " 
-  // 	 << endl;
-  // }
 
   assert (NK == p.N_total);
   assert (nmol == p.M_total);
 
+#pragma omp parallel for
   for (unsigned ii = 0; ii < 3 * nmol; ++ii){
     p.x[ii] = coord[ii];
   }
+#pragma omp parallel for
   for (unsigned ii = 0; ii < nmol; ++ii){
     p.f[ii][0] = 1.;
     p.f[ii][1] = 0.;
@@ -154,6 +160,7 @@ compute (vector<complex<double > > & sq,
   NFFT(adjoint)(&p);
 
   sq.resize (NK);
+#pragma omp parallel for
   for (unsigned ii = 0; ii < NK; ++ii){
     sq[ii].real (p.f_hat[ii][0]);
     sq[ii].imag (p.f_hat[ii][1]);
