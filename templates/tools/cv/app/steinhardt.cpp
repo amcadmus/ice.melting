@@ -239,7 +239,7 @@ int main(int argc, char * argv[])
     exit (1);
   }
   fprintf (fout, "# time  tot_numb_donator  tot_numb_acceptor\n");
-  if (p_detail){
+  if (p_detail || p_mol){
     if (access (odir.c_str(), 0) == -1) {
       cout << "# dir " << odir << " does not exist, create." << endl;
       if (mkdir (odir.c_str(), 0755)){
