@@ -18,13 +18,15 @@ function check_file () {
     file=$1
     if test ! -f $file; then
 	echo no file $file
+	exit
     fi
 }
 
 function check_folder () {
     folder=$1
     if test ! -d $folder; then
-	echo no file $folder
+	echo no folder $folder, make one
+	mkdir $folder
     fi
 }
 
