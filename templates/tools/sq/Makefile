@@ -5,7 +5,7 @@
 #boost-include-path=	/people/thnfs/homes/wanghan/local/include/boost-1_36
 #boost-lib-path=		/people/thnfs/homes/wanghan/local/lib
 boost-lib-option=	-lboost_program_options
-link-options=           -L~/local/lib ~/local/lib/libxdrfile.a $(boost-lib-option) ~/local/lib/libnfft3.a -lfftw3 -lfftw3
+link-options=           -L~/local/lib ~/local/lib/libxdrfile.a $(boost-lib-option) ~/local/lib/libnfft3.a -lfftw3
 
 include_dirs = 	./include ~/local/include/ $(MKL_INCLUDE)
 
@@ -36,7 +36,7 @@ cobjects = 	$(addprefix $(cobjects_dir)/,$(tmp_cobjects))
 
 
 C:=		gcc
-CFLAGS +=	-g -O0 -Wall -fopenmp
+CFLAGS +=	-g -O3 -Wall -fopenmp
 CFLAGS += 	$(addprefix -I ,$(include_dirs))
 
 CXX:=		g++

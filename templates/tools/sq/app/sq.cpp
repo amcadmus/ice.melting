@@ -228,7 +228,7 @@ int main(int argc, char * argv[])
     else {
       if (time < begin - time_prec) continue;
     }
-    if (((countread++)) % 100 == 0){
+    if (((countread++)) % 10 == 0){
       printf ("# load frame at time: %.1f ps\r", time);
       fflush (stdout);
     }
