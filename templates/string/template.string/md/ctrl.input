@@ -10,6 +10,7 @@ MDParameters {
 	rlist		= 1.0
 	rvdw		= 0.9
 	rele		= 0.9
+	disp_corr	= TRUE
 
 	ele_algor_name	= "spme"
 	ewald_alpha	= 3.5
