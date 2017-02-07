@@ -43,7 +43,7 @@ nmol=`echo "$natom / 4" | bc`
 
 # parse constraints.
 top_file=tops/top.input.$system_top_style
-numb_res=`grep HarmonicRestraint $top_file | wc -l`
+numb_res=`grep "HarmonicRestraint\|VolumeConstraint" $top_file | wc -l`
 numb_centers=`echo $res_centers | awk -F ',' '{print NF}'`
 if test $numb_centers -ne $numb_res; then
     echo "find $numb_res in top while find $numb_centers restraint center, inconsistency, do nothing."
@@ -54,7 +54,7 @@ fi
 res_name=""
 for ii in `seq 1 $numb_centers`
 do
-    key=`grep HarmonicRestraint $top_file | head -n $ii | tail -n 1 | awk '{print $1}'`
+    key=`grep "HarmonicRestraint\|VolumeConstraint" $top_file | head -n $ii | tail -n 1 | awk '{print $1}'`
     center_value=`echo $res_centers | cut -d ',' -f $ii`
     center_value=`printf %.04f $center_value`
     res_name=$res_name.${key}$'-'${center_value}

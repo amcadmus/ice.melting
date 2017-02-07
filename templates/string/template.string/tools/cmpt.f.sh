@@ -16,7 +16,7 @@ cd $target_dir
 source env.sh
 source parameters.sh
 
-numb_res=`grep HarmonicRestraint top.input | wc -l`
+numb_res=`grep "HarmonicRestraint\|VolumeConstraint" top.input | wc -l`
 numb_centers=`echo $res_centers | awk -F ',' '{print NF}'`
 if test $numb_centers -ne $numb_res; then
     echo "find $numb_res in top while find $numb_centers restraint center, inconsistency, do nothing."
@@ -26,7 +26,7 @@ fi
 line=""
 for ii in `seq 1 $numb_res`
 do
-    param_line=`grep HarmonicRestraint top.input  | head -n $ii | tail -n 1`
+    param_line=`grep "HarmonicRestraint\|VolumeConstraint" top.input  | head -n $ii | tail -n 1`
     key=`echo $param_line | sed 's/.*input =\(.*\)k.*/\1/g' | awk -F'"' '{print $2}'`
     center=`echo $param_line | sed 's/.*center =\(.*\)bias.*/\1/g'`
     kk=`echo $param_line | sed 's/.*k =\(.*\)center.*/\1/g'`

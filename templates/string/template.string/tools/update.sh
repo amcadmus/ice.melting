@@ -53,10 +53,10 @@ if test ${#real_2_recp_ratio} -ne 0; then
 fi
 
 # prepare top.input (restraint parameters)
-numb_res=`grep HarmonicRestraint top.input | wc -l`
+numb_res=`grep "HarmonicRestraint\|VolumeConstraint" top.input | wc -l`
 for ii in `seq 1 $numb_res`
 do
-    key=`grep HarmonicRestraint top.input | head -n $ii | tail -n 1 | awk '{print $1}'`
+    key=`grep "HarmonicRestraint\|VolumeConstraint" top.input | head -n $ii | tail -n 1 | awk '{print $1}'`
     center_value=`echo $res_centers | cut -d ',' -f $ii`
     sed -i "/$key/s/CENTER_VALUE/$center_value/g" top.input
     nkword=`echo $res_k | tr ',' ' ' | wc -w`

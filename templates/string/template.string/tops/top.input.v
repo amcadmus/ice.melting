@@ -77,6 +77,6 @@ Mace {
      norm_sqz	{command = "Divide"		input = "l2_sqz","count"						}
      volume     {command = "Volume"                                                                                     }
     res_q6	{command = "HarmonicRestraint"	input = "norm_q6"	k = K_VALUE		center = CENTER_VALUE	bias = TRUE	}
-    vc          {command = "VolumeConstraint"				k = K_VALUE		center = CENTER_VALUE   }
+    vc          {command = "VolumeConstraint"	input = "volume"	k = K_VALUE		center = CENTER_VALUE	bias = TRUE     }
     print	{command = "Print"		input = "norm_q6","volume","norm_sqxy","norm_sqz","norm_101","norm_100","norm_002","norm_110","res_q6"	file = "mace.out"	every = 1	}
 }
