@@ -49,11 +49,15 @@ def init_source_string (string_dir, numb_node_tgt) :
     
     return string
 
-def generate_from_source (source_string_dir,
+def generate_from_source (source_string_dir_,
                           string) :
     # check the dir and string file
-    if not os.path.isdir (source_string_dir) :
-        raise RuntimeError ("cannot find dir " + source_string_dir)
+    if not os.path.isdir (source_string_dir_) :
+        raise RuntimeError ("cannot find dir " + source_string_dir_)
+    cwd = os.getcwd()
+    os.chdir (source_string_dir_)
+    source_string_dir = os.getcwd ()
+    os.chdir (cwd)
     file_name = source_string_dir + "/string.out"
     if not os.path.exists (file_name) :
         raise RuntimeError ("cannot find file " + file_name)
