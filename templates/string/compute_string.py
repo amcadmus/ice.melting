@@ -43,7 +43,7 @@ def compute_string_tegent (alpha,
     tangent = np.zeros (string.shape)
     numb_node = string.shape[0]
     dim = string.shape[1]
-    smooth_str = interp1d (alpha, string, axis=0, kind="cubic")
+    smooth_str = interp1d (alpha, string, axis=0, kind="linear")
     tangent[0]  = ( smooth_str(alpha[ 0] + delta_a) - smooth_str(alpha[ 0]) ) / delta_a
     tangent[-1] = ( smooth_str(alpha[-1]) - smooth_str(alpha[-1] - delta_a) ) / delta_a
     for ii in range (1, numb_node-1):

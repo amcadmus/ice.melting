@@ -42,7 +42,7 @@ def init_source_string (string_dir, numb_node_tgt) :
         alpha_seg[jj] = np.linalg.norm (string[jj] - string[jj-1])
     alpha = np.cumsum (alpha_seg)
     alpha = alpha / alpha[-1]
-    smooth_str = interp1d (alpha, string, axis=0, kind="cubic")
+    smooth_str = interp1d (alpha, string, axis=0, kind="linear")
 
     alpha_eq = np.linspace (0, 1, numb_node_tgt)
     string = smooth_str (alpha_eq)
