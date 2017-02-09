@@ -68,7 +68,7 @@ class BatchJob (object):
             raise RuntimeError ("cannot find job script " + abs_job_script)
         cwd = os.getcwd()
         os.chdir (self.job_dir)
-        ret = Popen([self.submit_cmd, self.job_script], stdout=PIPE, stderr=PIPE)
+        ret = Popen([self.submit_cmd + " " + self.job_script], stdout=PIPE, stderr=PIPE, shell = True)
         stdout, stderr = ret.communicate()
         if str(stderr, encoding='ascii') != "":
             raise RuntimeError (stderr)
