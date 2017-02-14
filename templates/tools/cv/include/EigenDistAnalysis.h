@@ -49,6 +49,16 @@ private:
   double comp_eig (const double * eig,
 		   const unsigned n_eig);
   void  process_ref ();
+  void assemble_trait_mat_dist (arma::mat & VV,
+				const vector<vector<double > > & waters,
+				const vector<double > & box,
+				const int & i_index,
+				const vector<int > & i_neigh_index);
+  void assemble_trait_mat_angle (arma::mat & VV,
+				 const vector<vector<double > > & waters,
+				 const vector<double > & box,
+				 const int & i_index,
+				 const vector<int > & i_neigh_index);
 private :
   vector<double > avg_value;
   vector<double > step_value;

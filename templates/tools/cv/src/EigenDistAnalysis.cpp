@@ -1,6 +1,7 @@
 #include "EigenDistAnalysis.h"
 
 enum {
+  global_coord_ref_size = 16,
   global_eig_ref_mat_size = 16
 };
 const double global_eig_ref_mat[global_eig_ref_mat_size][global_eig_ref_mat_size] = 
@@ -21,6 +22,26 @@ const double global_eig_ref_mat[global_eig_ref_mat_size][global_eig_ref_mat_size
 {-0.46111,-0.4607,-0.41927,-0.36708,-0.29782,-0.28449,-0.28169,-0.20789,-0.20768,-0.17275,0.075389,0.2545,0.28639,2.5442,0,0},
 {-0.46111,-0.46109,-0.43798,-0.38832,-0.30807,-0.29782,-0.28379,-0.23422,-0.20773,-0.20339,-0.168,0.17163,0.28501,0.28701,2.7079,0},
 {-0.46112,-0.46111,-0.45875,-0.39445,-0.30807,-0.30807,-0.29782,-0.23422,-0.23421,-0.20339,-0.20338,-0.16614,0.27732,0.28701,0.28703,2.8794}
+};
+
+
+const double global_coord_ref [global_coord_ref_size][3] = {
+  {  0,0,2.68425},
+{-2.1917,1.2654,-0.89475},
+{2.1917,1.2654,-0.89475},
+{-0.0000,-2.5308,-0.89475},
+{-2.1917,3.7962,-0.0000},
+{-4.3835,0.0000,-0.0000},
+{4.3835,0.0000,-0.0000},
+{2.1917,3.7962,-0.0000},
+{-2.1917,-3.7962,-0.0000},
+{2.1917,-3.7962,-0.0000},
+{-2.1917,1.2654,-3.5791},
+{2.1917,1.2654,-3.5791},
+{-0.0000,-2.5308,-3.5791},
+{-2.1917,1.2654,3.5791},
+{2.1917,1.2654,3.5791},
+{-0.0000,-2.5308,3.5791},
 };
 
 
@@ -53,12 +74,36 @@ void
 EigenDistAnalysis:: 
 process_ref ()
 {
-  ref_eig.resize (global_eig_ref_mat_size);
-  for (unsigned ii = 0; ii < global_eig_ref_mat_size; ++ii) {
-    for (unsigned jj = 0; jj < global_eig_ref_mat_size; ++jj) {
-      ref_eig[ii].push_back (global_eig_ref_mat[ii][jj] * 10.);
+  // ref_eig.resize (global_eig_ref_mat_size);
+  // for (unsigned ii = 0; ii < global_eig_ref_mat_size; ++ii) {
+  //   for (unsigned jj = 0; jj < global_eig_ref_mat_size; ++jj) {
+  //     ref_eig[ii].push_back (global_eig_ref_mat[ii][jj] * 10.);
+  //   }
+  // }
+  vector<vector<double > > coord_ref (global_coord_ref_size+1, vector<double> (3,1.));
+  for (int ii = 0; ii < global_coord_ref_size; ++ii){
+    for (int dd = 0; dd < 3; ++dd){
+      coord_ref[ii+1][dd] = global_coord_ref[ii][dd] * 0.1 * 1.0305 + coord_ref[0][dd];
     }
   }  
+  vector<double > box (3, 5.);
+  ref_eig.resize (global_eig_ref_mat_size, vector<double > (global_eig_ref_mat_size, 0));
+  for (int ii = 0; ii < global_eig_ref_mat_size; ++ii){
+    vector<int > nlist(ii+1);
+    // ii + 1 neighbors
+    for (int jj = 0; jj < ii+1; ++jj){
+      nlist[jj] = jj+1;
+    }
+    arma::mat VV = arma::zeros<arma::mat>(ii+1, ii+1);
+    assemble_trait_mat_angle (VV, coord_ref, box, 0, nlist);
+
+    arma::vec eigs = arma::zeros<arma::vec>(ii+1);
+    eig_sym(eigs, VV);
+    // record the result
+    for (int jj = 0; jj < ii+1; ++jj){
+      ref_eig[ii][jj] = eigs(jj);
+    }    
+  }
 }
 
 inline double 
@@ -79,6 +124,92 @@ dist2 (const vector<double> & a1,
   }
   return diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2];
 }
+
+void 
+EigenDistAnalysis::
+assemble_trait_mat_dist (arma::mat & VV,
+			 const vector<vector<double > > & waters,
+			 const vector<double > & box,
+			 const int & i_index,
+			 const vector<int > & i_neigh_index)
+{
+  VV.zeros();
+  for (unsigned j1 = 1; j1 < i_neigh_index.size(); ++j1){
+    int j1_index = i_neigh_index[j1];
+    for (unsigned j2 = 0; j2 < j1; ++j2){
+      int j2_index = i_neigh_index[j2];
+      double rij = sqrt (dist2 (waters[j1_index], waters[j2_index], box) );
+      VV(j1, j2) = 1./rij;
+    }
+  }
+  VV = VV + VV.t();  
+}
+		    
+static inline
+void
+diff ( vector<double> & diff,
+	const vector<double> & a1,
+	const vector<double> & a2,
+	const vector<double> & box)
+{
+  for (int dd = 0; dd < 3; ++dd) diff[dd] = a1[dd] - a2[dd];
+  vector<int > shift(3, 0);
+  for (int dd = 0; dd < 3; ++dd){
+    if      (diff[dd] < -.5 * box[dd]) shift[dd] += 1;
+    else if (diff[dd] >= .5 * box[dd]) shift[dd] -= 1;
+  }
+  for (int dd = 0; dd < 3; ++dd){
+    diff[dd] += box[dd] * shift[dd];
+  }  
+}
+
+static inline 
+double 
+dot (const vector<double> & a1,
+     const vector<double> & a2)
+{
+  return a1[0] * a2[0] + a1[1] * a2[1] + a1[2] * a2[2];
+}
+
+
+static inline 
+double 
+norm2 (const vector<double> & diff)
+{
+  return dot (diff, diff);
+}
+
+void 
+EigenDistAnalysis::
+assemble_trait_mat_angle (arma::mat & VV,
+			  const vector<vector<double > > & waters,
+			  const vector<double > & box,
+			  const int & i_index,
+			  const vector<int > & i_neigh_index)
+{
+  for (unsigned j1 = 0; j1 < i_neigh_index.size(); ++j1){
+    VV(j1, j1) = 1.;
+  }
+  
+  vector<double > diff1(3), diff2(3);
+  for (unsigned j1 = 1; j1 < i_neigh_index.size(); ++j1){
+    int j1_index = i_neigh_index[j1];
+    diff (diff1, waters[j1_index], waters[i_index], box) ;    
+    // for (unsigned kk = 0; kk < 3; ++kk) cout << diff1[kk] << " " ;
+    // cout << endl;
+    double r1 = sqrt(norm2 (diff1));
+    for (unsigned j2 = 0; j2 < j1; ++j2){
+      int j2_index = i_neigh_index[j2];
+      diff (diff2, waters[j2_index], waters[i_index], box) ;    
+      // for (unsigned kk = 0; kk < 3; ++kk) cout << diff2[kk] << " " ;
+      // cout << endl;
+      double r2 = sqrt(norm2 (diff2));
+      VV(j1, j2) = dot (diff1, diff2) / r1 / r2;
+      VV(j2, j1) = VV(j1, j2);
+    }
+  }
+}
+		    
 
 double 
 EigenDistAnalysis:: 
@@ -182,16 +313,7 @@ computeMolValue (vector<double > & mol_value,
     unsigned nearest_n = i_neigh_index[i_index].size();
     arma::mat VV = arma::zeros<arma::mat>(nearest_n, nearest_n);
     arma::vec eigs = arma::zeros<arma::vec>(nearest_n);
-    VV.zeros();
-    for (unsigned j1 = 1; j1 < i_neigh_index[i_index].size(); ++j1){
-      int j1_index = i_neigh_index[i_index][j1];
-      for (unsigned j2 = 0; j2 < j1; ++j2){
-	int j2_index = i_neigh_index[i_index][j2];
-	double rij = sqrt (dist2 (waters[j1_index], waters[j2_index], box) );
-	VV(j1, j2) = 1./rij;
-      }
-    }
-    VV = VV + VV.t();
+    assemble_trait_mat_angle (VV, waters, box, i_index, i_neigh_index[i_index]);
     // compute eigen value for VV
     eig_sym(eigs, VV);
     // record the result
