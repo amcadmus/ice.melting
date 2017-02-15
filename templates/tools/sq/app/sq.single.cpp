@@ -139,7 +139,7 @@ int main(int argc, char * argv[])
       ("numb-mol-atom", po::value<int > (&numb_mol_atom)->default_value(4), "number of sites in the water molecule")
       ("numb-threads,t", po::value<int > (&func_numb_threads)->default_value(1), "number of threads")
       ("input,f",   po::value<string > (&ifile)->default_value ("traj.xtc"), "the input .xtc file")
-      ("output,o",  po::value<string > (&ofile)->default_value ("sqs.out"), "the output time average of mol sq")
+      ("output,o",  po::value<string > (&ofile)->default_value ("sq.single.out"), "the output time average of mol sq")
       ("output-dir",  po::value<string > (&odir)->default_value ("sqs"), "the output directory of mol sq");
   
   po::variables_map vm;
@@ -233,6 +233,12 @@ int main(int argc, char * argv[])
     cerr << "cannot open file " << ifile << endl;
     exit (1);
   }
+  FILE *fout = fopen (ofile.c_str(), "w");
+  if (fout == NULL){
+    cerr << "cannot open file " << ofile << endl;
+    exit (1);
+  }
+  double sq_sum = 0;
   // if (p_mol) {
   //   open_mol_defect (odir, nmolecules);
   // }
@@ -268,8 +274,11 @@ int main(int argc, char * argv[])
     vector<double >  mybox(3);
     for (unsigned dd = 0; dd < 3; ++dd) mybox[dd] = box[dd][dd];
     
+    double sq = sq_single (qq, coms);
+    fprintf (fout, "%f\t%f\n", time, sq);
+    sq_sum += sq;
     // vector<double > mol_sq;
-    cout << time << "\t " << sq_single (qq, coms) << endl;;
+    // cout << time << "\t " << sq_single (qq, coms) << endl;;
     // if (p_mol){
     //   print_mol (odir, step, time, mol_sq, func_numb_threads);
     // }
@@ -278,22 +287,10 @@ int main(int argc, char * argv[])
     // }
     count += 1;
   }
-  printf ("\n");
+  // printf ("\n");
+  cout << sq_sum / double(count) << endl;
 
-
-  // for (unsigned ii = 0; ii < sum_mol_sq.size(); ++ii){
-  //   sum_mol_sq[ii] /= double(count);
-  // }
-  // FILE *fout = fopen (ofile.c_str(), "w");
-  // if (fout == NULL){
-  //   cerr << "cannot open file " << ofile << endl;
-  //   exit (1);
-  // }
-  // for (unsigned ii = 0; ii < sum_mol_sq.size(); ++ii){
-  //   if (ii == 0) continue;
-  //   fprintf (fout, "%06d %f\n", ii, sum_mol_sq[ii]);
-  // }
-  // fclose (fout);
+  fclose (fout);
 
   free (xx);  
   xdrfile_close (fp);
