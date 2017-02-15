@@ -59,6 +59,11 @@ private:
 				 const vector<double > & box,
 				 const int & i_index,
 				 const vector<int > & i_neigh_index);
+  void assemble_trait_mat_dot (arma::mat & VV,
+			       const vector<vector<double > > & waters,
+			       const vector<double > & box,
+			       const int & i_index,
+			       const vector<int > & i_neigh_index);
 private :
   vector<double > avg_value;
   vector<double > step_value;

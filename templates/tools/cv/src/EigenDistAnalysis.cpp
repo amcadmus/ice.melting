@@ -95,7 +95,7 @@ process_ref ()
       nlist[jj] = jj+1;
     }
     arma::mat VV = arma::zeros<arma::mat>(ii+1, ii+1);
-    assemble_trait_mat_angle (VV, coord_ref, box, 0, nlist);
+    assemble_trait_mat_dot (VV, coord_ref, box, 0, nlist);
 
     arma::vec eigs = arma::zeros<arma::vec>(ii+1);
     eig_sym(eigs, VV);
@@ -210,6 +210,31 @@ assemble_trait_mat_angle (arma::mat & VV,
   }
 }
 		    
+void 
+EigenDistAnalysis::
+assemble_trait_mat_dot (arma::mat & VV,
+			  const vector<vector<double > > & waters,
+			  const vector<double > & box,
+			  const int & i_index,
+			  const vector<int > & i_neigh_index)
+{
+  for (unsigned j1 = 0; j1 < i_neigh_index.size(); ++j1){
+    VV(j1, j1) = 0.;
+  }
+  
+  vector<double > diff1(3), diff2(3);
+  for (unsigned j1 = 1; j1 < i_neigh_index.size(); ++j1){
+    int j1_index = i_neigh_index[j1];
+    diff (diff1, waters[j1_index], waters[i_index], box) ;    
+    for (unsigned j2 = 0; j2 < j1; ++j2){
+      int j2_index = i_neigh_index[j2];
+      diff (diff2, waters[j2_index], waters[i_index], box) ;    
+      VV(j1, j2) = dot (diff1, diff2);
+      VV(j2, j1) = VV(j1, j2);
+    }
+  }
+}
+		    
 
 double 
 EigenDistAnalysis:: 
@@ -313,7 +338,7 @@ computeMolValue (vector<double > & mol_value,
     unsigned nearest_n = i_neigh_index[i_index].size();
     arma::mat VV = arma::zeros<arma::mat>(nearest_n, nearest_n);
     arma::vec eigs = arma::zeros<arma::vec>(nearest_n);
-    assemble_trait_mat_angle (VV, waters, box, i_index, i_neigh_index[i_index]);
+    assemble_trait_mat_dot (VV, waters, box, i_index, i_neigh_index[i_index]);
     // compute eigen value for VV
     eig_sym(eigs, VV);
     // record the result
