@@ -34,7 +34,7 @@ do
     col=`echo "$col+1" | bc`   
     echo "# $key $col $center $kk"
     awk "{print (\$$col - $center) * $kk}" mace.out > tmp.out
-    $moasp_bin_dir/$moasp_avg -f tmp.out -t .9 > avg.out
+    $moasp_bin_dir/$moasp_avg -f tmp.out -t .8 > avg.out
     force=`grep -v \# avg.out | awk '{print $1}'`
     force_err=`grep -v \# avg.out | awk '{print $2}'`
     if [ $? -ne 0 ]; then echo "unsuccessful msp_avg, exit"; exit 1; fi
