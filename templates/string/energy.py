@@ -33,8 +33,8 @@ def main () :
     dim = string.shape[1]    
 
     # compute arc (alpha)
-    alpha_seg = string_utils.string_arc_seg (string)
-    alpha = string_utils.string_arc_norm (string)
+    alpha_seg = string_utils.arc_seg (string)
+    alpha = string_utils.arc_norm (string)
 
     # integrate the energy
     energy = np.zeros (alpha.shape)
