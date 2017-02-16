@@ -5,6 +5,7 @@ import argparse
 import numpy as np
 import subprocess as sp
 from compute_string import compute_string_tegent
+import string_utils
 
 def main () :
     parser = argparse.ArgumentParser(
@@ -25,20 +26,15 @@ def main () :
         raise RuntimeError ("cannot find string force file " +
                             string_force +
                             ". maybe the simulation is not finished")
-    
+
     string = np.loadtxt (string_file)
     force = np.loadtxt (string_force)
     numb_node = string.shape[0]
     dim = string.shape[1]    
 
     # compute arc (alpha)
-    alpha       = np.zeros (numb_node)
-    alpha_seg   = np.zeros (numb_node)
-    alpha_seg[0] = 0
-    for jj in range (1, numb_node):
-        alpha_seg[jj] = np.linalg.norm (string[jj] - string[jj-1])
-    alpha = np.cumsum (alpha_seg)
-    alpha = alpha / alpha[-1]
+    alpha_seg = string_utils.string_arc_seg (string)
+    alpha = string_utils.string_arc_norm (string)
 
     # integrate the energy
     energy = np.zeros (alpha.shape)
@@ -47,13 +43,13 @@ def main () :
         v0 = np.dot (tagent[ii-1], force[ii-1])
         v1 = np.dot (tagent[ii]  , force[ii]  )
         vn = force[ii] - v1 * tagent[ii]
-        print (str(v1) +
-               "  t: " + str(v1 * tagent[ii]) +
-               "  |t|:  " + str(np.sqrt(np.dot(v1 * tagent[ii], v1 * tagent[ii]))) +
-               "  n: " + str(vn) +
-               "  |n|: " + str(np.sqrt(np.dot(vn,vn))) +
-               "  t.n: " + str(np.dot(v1 * tagent[ii], vn))
-               )
+        # print (str(v1) +
+        #        "  t: " + str(v1 * tagent[ii]) +
+        #        "  |t|:  " + str(np.sqrt(np.dot(v1 * tagent[ii], v1 * tagent[ii]))) +
+        #        "  n: " + str(vn) +
+        #        "  |n|: " + str(np.sqrt(np.dot(vn,vn))) +
+        #        "  t.n: " + str(np.dot(v1 * tagent[ii], vn))
+        #        )
         de = 0.5 * (v0 + v1) * alpha_seg[ii]
         energy[ii] = energy[ii-1] - de
 
