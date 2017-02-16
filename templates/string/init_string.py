@@ -5,6 +5,7 @@ import os
 import sys
 import argparse
 import numpy as np
+import string_utils
 from StringForce import StringForce
 from subprocess import Popen, PIPE
 from scipy.interpolate import interp1d
@@ -35,13 +36,7 @@ def init_source_string (string_dir, numb_node_tgt) :
         raise RuntimeError ("cannot find file " + file_name)
 
     string = np.loadtxt (file_name)
-    numb_node = string.shape[0]
-    alpha_seg = np.linspace (0, 1, numb_node)
-    alpha_seg[0] = 0
-    for jj in range (1, numb_node):
-        alpha_seg[jj] = np.linalg.norm (string[jj] - string[jj-1])
-    alpha = np.cumsum (alpha_seg)
-    alpha = alpha / alpha[-1]
+    alpha = string_utils.arc_norm (string)
     smooth_str = interp1d (alpha, string, axis=0, kind="linear")
 
     alpha_eq = np.linspace (0, 1, numb_node_tgt)
