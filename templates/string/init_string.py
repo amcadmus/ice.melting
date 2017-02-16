@@ -44,6 +44,18 @@ def init_source_string (string_dir, numb_node_tgt) :
     
     return string
 
+def check_source_string (string_dir) :
+    """ init a string from existing nodes"""
+    if not os.path.isdir (string_dir) :
+        raise RuntimeError ("Dir " + string_dir + " not found")
+    file_name = string_dir + "/string.out"
+    if not os.path.exists (file_name) :
+        raise RuntimeError ("cannot find file " + file_name)    
+
+def check_weighting (weighting_file) :
+    if not os.path.exists (weighting_file) :
+        raise RuntimeError ("cannot find weighting file " + weighting_file)        
+
 def generate_from_source (source_string_dir_,
                           string) :
     # check the dir and string file
@@ -129,12 +141,23 @@ def main ():
     sg = parser.add_argument_group ("Source string")
     sg.add_argument('-s', '--source', 
                     help='Generate a new string from this string.')
+    sg.add_argument('-w', '--weighting', 
+                    help='The weighting applied to the string.')    
 
     args = parser.parse_args()
 
     str_force = StringForce ("template.string", args.dep_size)
     str_force.replace ("template.string/parameters.sh", "md_time=.*", "md_time=" + str(args.md_time))
 
+    if args.method == "resample" or args.method == "resample-reinit" :
+        check_source_string (args.source)
+        source_string = np.loadtxt (args.source + "/string.out")
+        if args.weighting is not None :
+            check_weighting (args.weighting)
+            weighting = np.loadtxt (args.weighting)
+        else :
+            weighting = [[0, 1], [1, 1]]
+    
     if args.method == "linear" :
         if args.begin == None :
             raise RuntimeError ("Begin of the string is empty")
@@ -147,13 +170,15 @@ def main ():
     elif args.method == "resample" :
         if args.source == None :
             raise RuntimeError ("No source string")
-        string = init_source_string (args.source, args.numb_nodes)
+#        string = init_source_string (args.source, args.numb_nodes)
+        string = string_utils.resample_string (source_string, args.numb_nodes, weighting)
         generate_from_source (args.source, string)
         job = str_force.submit_string (0, True)
     elif args.method == "resample-reinit" :
         if args.source == None :
             raise RuntimeError ("No source string")
-        string = init_source_string (args.source, args.numb_nodes)
+#        string = init_source_string (args.source, args.numb_nodes)
+        string = string_utils.resample_string (source_string, args.numb_nodes, weighting)
         str_force.generate_string (0, string)
         job = str_force.submit_string (0, False)        
     else :
