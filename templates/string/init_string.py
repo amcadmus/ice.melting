@@ -77,15 +77,21 @@ def generate_from_source (source_string_dir_,
     cwd = os.getcwd()
     cmd_gen_dir = "tools/gen.dir.absdep.sh"
     os.chdir (string_name)
+
+    my_alpha = np.linspace (0, 1, string.shape[0])
+    source_alpha = np.linspace (0, 1, source_string.shape[0])
     for ii in range (string.shape[0]) :
-        min_val = 1e10
-        min_posi = 0
+        # min_val = 1e10
+        # min_posi = 0
+        # for jj in range(source_string.shape[0]) :
+        #     norm = np.linalg.norm (string[ii] - source_string[jj])
+        #     # print ("id " + str(jj) +
+        #     #        " diff " + str(string[ii]) + " " + str(source_string[jj]) + " norm " + str(norm))
+        #     if norm < min_val :
+        #         min_val = norm
+        #         min_posi = jj
         for jj in range(source_string.shape[0]) :
-            norm = np.linalg.norm (string[ii] - source_string[jj])
-            # print ("id " + str(jj) +
-            #        " diff " + str(string[ii]) + " " + str(source_string[jj]) + " norm " + str(norm))
-            if norm < min_val :
-                min_val = norm
+            if (my_alpha[ii] >= source_alpha[jj]) :
                 min_posi = jj
         this_node = str_force.mk_node_name (ii)
         str_force.mk_node_param (string[ii])
