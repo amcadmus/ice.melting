@@ -73,8 +73,8 @@ def generate_from_source (source_string_dir_,
     cmd_gen_dir = "tools/gen.dir.absdep.sh"
     os.chdir (string_name)
 
-    my_alpha = np.linspace (0, 1, string.shape[0])
-    source_alpha = np.linspace (0, 1, source_string.shape[0])
+    my_alpha     = string_utils.arc_norm (string)
+    source_alpha = string_utils.arc_norm (source_string)
     for ii in range (string.shape[0]) :
         # min_val = 1e10
         # min_posi = 0
