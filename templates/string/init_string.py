@@ -5,7 +5,7 @@ import os
 import sys
 import argparse
 import numpy as np
-import string_utils
+import StringUtils
 from StringForce import StringForce
 from subprocess import Popen, PIPE
 from scipy.interpolate import interp1d
@@ -36,7 +36,7 @@ def init_source_string (string_dir, numb_node_tgt) :
         raise RuntimeError ("cannot find file " + file_name)
 
     string = np.loadtxt (file_name)
-    alpha = string_utils.arc_norm (string)
+    alpha = StringUtils.arc_norm (string)
     smooth_str = interp1d (alpha, string, axis=0, kind="linear")
 
     alpha_eq = np.linspace (0, 1, numb_node_tgt)
@@ -85,8 +85,8 @@ def generate_from_source (source_string_dir_,
     cmd_gen_dir = "tools/gen.dir.absdep.sh"
     os.chdir (string_name)
 
-    my_alpha     = string_utils.arc_norm (string)
-    source_alpha = string_utils.arc_norm (source_string)
+    my_alpha     = StringUtils.arc_norm (string)
+    source_alpha = StringUtils.arc_norm (source_string)
     for ii in range (string.shape[0]) :
         # min_val = 1e10
         # min_posi = 0
@@ -171,14 +171,14 @@ def main ():
         if args.source == None :
             raise RuntimeError ("No source string")
 #        string = init_source_string (args.source, args.numb_nodes)
-        string = string_utils.resample_string (source_string, args.numb_nodes, weighting)
+        string = StringUtils.resample_string (source_string, args.numb_nodes, weighting)
         generate_from_source (args.source, string)
         job = str_force.submit_string (0, True)
     elif args.method == "resample-reinit" :
         if args.source == None :
             raise RuntimeError ("No source string")
 #        string = init_source_string (args.source, args.numb_nodes)
-        string = string_utils.resample_string (source_string, args.numb_nodes, weighting)
+        string = StringUtils.resample_string (source_string, args.numb_nodes, weighting)
         str_force.generate_string (0, string)
         job = str_force.submit_string (0, False)        
     else :

@@ -31,9 +31,10 @@ def arc_norm (string) :
 def __solve_func (x) :
     return global_mapping(x) - global_line
 
-def resample_string (string,
+def resample_string (string_,
                      new_numb_node,
                      weighting_ = [[0, 1], [1, 1]]) :
+    string = string_
     global global_line
     global global_mapping
     

@@ -5,7 +5,7 @@ import argparse
 import numpy as np
 import subprocess as sp
 from compute_string import compute_string_tegent
-import string_utils
+import StringUtils
 
 def main () :
     parser = argparse.ArgumentParser(
@@ -33,8 +33,8 @@ def main () :
     dim = string.shape[1]    
 
     # compute arc (alpha)
-    alpha_seg = string_utils.arc_seg (string)
-    alpha = string_utils.arc_norm (string)
+    alpha_seg = StringUtils.arc_seg (string)
+    alpha = StringUtils.arc_norm (string)
 
     # integrate the energy
     energy = np.zeros (alpha.shape)

@@ -94,7 +94,7 @@ class StringForce (object) :
             if find_unfinish == False :
                 return
             else :
-                time.sleep (60)
+                time.sleep (20)
             print ("# checked at " + time.strftime("%Y-%m-%d %H:%M:%S"))            
     
     def submit_string (self,

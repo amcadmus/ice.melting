@@ -6,6 +6,7 @@ import argparse
 import numpy as np
 import subprocess as sp
 import logging
+import StringUtils
 from scipy.interpolate import interp1d
 from StringForce import StringForce
 from subprocess import Popen, PIPE
@@ -91,7 +92,8 @@ def compute_string (compute_force,              # function for computing the for
                     string,                     # the input string
                     dt = 0.05,                  # artificial time step for updating the string
                     max_iter = 200,             # maximum allowed number of iterations
-                    start_iter = 0
+                    start_iter = 0,
+                    weighting = [[0,1],[1,1]]   # weighting of string discretization
                     ):            
     """ compute the string"""
     factor_Q = 1.1
@@ -103,8 +105,6 @@ def compute_string (compute_force,              # function for computing the for
     if numb_node <= 2:
         raise NameError ('The number of nodes on string should be larger than 2')
     # initialize
-    alpha       = np.linspace (0, 1, numb_node)
-    alpha_seg   = np.linspace (0, 1, numb_node)
     alpha_eq    = np.linspace (0, 1, numb_node)
     incr_hist   = [[]]
 
@@ -114,23 +114,14 @@ def compute_string (compute_force,              # function for computing the for
         # update the string
         string = update_string_Euler (compute_force, dt, ii, string)
         # string = update_string_RK4 (compute_force, dt, string)
-        # update the arc
-        alpha_seg[0] = 0
-        for jj in range (1, numb_node):
-            alpha_seg[jj] = np.linalg.norm (string[jj] - string[jj-1])
-        alpha = np.cumsum (alpha_seg)
-        alpha = alpha / alpha[-1]
-        # reparameterize the string if needed
-        smooth_str = interp1d (alpha, string, axis=0, kind="linear")
-        if np.max (alpha_seg[1:]) / np.min(alpha_seg[1:]) > factor_Q :
-            string = smooth_str (alpha_eq)
-            logging.info ("string %06d: resampled .", ii+1)
+        # discretize the string
+        string = StringUtils.resample_string (string, numb_node, weighting)
         # compute the max norm force as measure of convergence
         if ii != start_iter :
-            norm_string = smooth_str (alpha_eq)
+            norm_string = string
             diff_string = norm_string - norm_string_old
             norm_string_old = np.copy (norm_string)
-            diff = np.sqrt (np.sum (np.multiply (diff_string, diff_string), axis=1))                        
+            diff = np.sqrt (np.sum (np.multiply (diff_string, diff_string), axis=1))
             diff_inf = np.max( diff )
             new_item = np.array([ii, diff_inf])
             new_item = new_item[np.newaxis,:]
@@ -141,7 +132,7 @@ def compute_string (compute_force,              # function for computing the for
             logging.info ("string %06d: updated with timestep %e . String difference is %e", ii+1, dt, diff_inf)
             conv_file.write (str(ii) + " " + str(diff_inf) + "\n")
         else :
-            norm_string_old = smooth_str (alpha_eq)            
+            norm_string_old = string
             logging.info ("string %06d: updated with timestep %e .", ii+1, dt)
 #    print incr_hist
     conv_file.close ()
@@ -165,6 +156,8 @@ def main ():
                         help='Maximum number of steps')
     parser.add_argument('-t','--md-time', type=int, default=20,
                         help='Physical time of MD simulation in unit of ps.')
+    parser.add_argument('-w','--weighting', 
+                        help='The weighting for string discretization.')
 
     args = parser.parse_args()
 
@@ -186,8 +179,15 @@ def main ():
                                 ", which has not been assigned as string name, should be wrong.")
         sp.check_call ("ln -s " + args.start + " " + start_name, shell = True)        
 
+    if args.weighting is not None :
+        if not os.path.exists (args.weighting) :
+            raise RuntimeError ("cannot find weighting file " + weighting_file)        
+        weighting = np.loadtxt (args.weighting)
+    else :
+        weighting = [[0, 1], [1, 1]]
+
     string = np.loadtxt (start_name + "/string.out")
-    string = compute_string (sf.compute, string, args.step, args.max_step, start_step)
+    string = compute_string (sf.compute, string, args.step, args.max_step, start_step, weighting)
     
 if __name__ == "__main__":
     main ()
