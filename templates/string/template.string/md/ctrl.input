@@ -50,5 +50,5 @@ OutputControl{
 
 Sets {
      atom_set	{command = "IndexSet"		atom_index = "0" 				}
-     nlist	{command = "AtomPairList"	sets = "atom_set","atom_set"	rlist = 0.56	}
+     nlist	{command = "AtomPairList"	sets = "atom_set","atom_set"	rlist = 0.60	}
 }
