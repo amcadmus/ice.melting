@@ -17,6 +17,7 @@
 #include "xdrfile/xdrfile_xtc.h"
 #include "Defines.h"
 #include "CellList.h"
+#include "EigenDist.h"
 #include "EigenDistAnalysis.h"
 #include "StringSplit.h"
 
@@ -121,16 +122,15 @@ int main(int argc, char * argv[])
   int numb_mol_atom;
   double rmax;
   bool p_detail (false), p_mol(false), do_avg(false);
-  string str_cols;
-  vector<double > ref_eig;
+  string method;
   
   po::options_description desc ("Allow options");
   desc.add_options()
       ("help,h", "print this message")
       ("begin,b", po::value<double > (&begin)->default_value(0.f), "start time")
       ("end,e",   po::value<double > (&end  )->default_value(0.f), "end   time")
+      ("method,m", po::value<string > (&method)->default_value("dist"), "Method of computing the matrix M, can be dist, angle, dot. default is dist")      
       ("r-max,r",   po::value<double > (&rmax)->default_value(0.36), "the max for r switch function")
-      ("ref-eig", po::value<string > (&str_cols), "Ref eigen values. Should be a sequence of reference eigenvalues sepereated by comma, no spacing in between")      
       ("loc-avg,a", "the local averaged Steinhardt parameter due to Leichner and Dellago")      
       ("detail", "print the Q value of each molecule at each step")
       ("mol-value", "print the Q trajectory for each atom is printed")
@@ -156,23 +156,6 @@ int main(int argc, char * argv[])
   if (vm.count("loc-avg")){
     do_avg = true;
   }
-  if (!vm.count("ref-eig")){
-    // cerr << "reference eigen values should be provided by --ref-eig" << endl;
-    // return 1;
-    cout << "# assume first shell eigen values" << endl;;
-    ref_eig.resize (4);
-    ref_eig[0] = -2.2138;
-    ref_eig[1] = -2.2138;
-    ref_eig[2] = -2.2138;
-    ref_eig[3] = 6.6414;
-  }
-  else {
-    vector<string> words;
-    StringOperation::split (str_cols, ",", words);
-    for (unsigned ii = 0; ii < words.size(); ++ii){
-      ref_eig.push_back (atof(words[ii].c_str()));
-    }
-  }
 
   double rcut = rmax;
   cellSize = rcut + 1e-6;
@@ -188,6 +171,21 @@ int main(int argc, char * argv[])
   cout << "# rmax: " << rmax << endl;
   cout << "###################################################" << endl;  
   
+  EigenDistAnalysisBase * eda;
+  if (method == "dist") {
+    eda = new EigenDistAnalysis <assemble_trait_mat_dist> (rmax, func_numb_threads);
+  }
+  else if (method == "angle") {
+    eda = new EigenDistAnalysis <assemble_trait_mat_angle> (rmax, func_numb_threads);
+  }
+  else if (method == "dot") {
+    eda = new EigenDistAnalysis <assemble_trait_mat_dot> (rmax, func_numb_threads);
+  }
+  else {
+    cerr << "method " << method << " is not implemented" << endl;
+    return 1;
+  }
+
   XDRFILE *fp;
   int natoms, step;
   float time;
@@ -238,7 +236,6 @@ int main(int argc, char * argv[])
   waters.reserve (nmolecules * 3);
 
   CellList clist (nmolecules, vbox, cellSize);
-  EigenDistAnalysis eda (rmax, ref_eig, func_numb_threads);
 
   int countread = 0;
   FILE *fout = fopen (ofile.c_str(), "w");
@@ -303,20 +300,20 @@ int main(int argc, char * argv[])
     vector<double > vect_box(3);
     for (int dd = 0; dd < 3; ++dd) vect_box[dd] = box[dd][dd];
 
-    eda.deposite (clist, vect_box, coms, do_avg);
+    eda->deposite (clist, vect_box, coms, do_avg);
 
     // fprintf (fout, "%f\t %f\n", time, p_sa->getStepQ());
     if (p_detail){
-      print_step (odir, step, time, eda.getStepMole());
+      print_step (odir, step, time, eda->getStepMole());
     }
     if (p_mol){
-      print_mol (odir, step, time, eda.getStepMole(), func_numb_threads);
+      print_mol (odir, step, time, eda->getStepMole(), func_numb_threads);
     }
   }
   printf ("\n");
 
-  eda.average();
-  vector<double > avg = eda.getAvgMole();
+  eda->average();
+  vector<double > avg = eda->getAvgMole();
   for (unsigned ii = 0; ii < avg.size(); ++ii){
     fprintf (fout, "%06d %f\n", ii, avg[ii]);
   }
@@ -324,6 +321,7 @@ int main(int argc, char * argv[])
   free (xx);  
   fclose (fout);
   xdrfile_close (fp);
+  delete eda;
 
   return 0;
 }

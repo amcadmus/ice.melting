@@ -4,35 +4,48 @@
 #include <armadillo>
 
 #include "CellList.h"
+#include "EigenDist.h"
 
 using namespace std;
 
-class EigenDistAnalysis 
+class EigenDistAnalysisBase 
+{
+public:
+  virtual ~EigenDistAnalysisBase () {};
+  virtual void deposite (const CellList & clist,
+			 const vector<double> box,
+			 const vector<vector<double > > & coms,
+			 const bool do_avg) = 0;
+  virtual void average () = 0;
+  virtual vector<double > getStepMole () const = 0;
+  virtual vector<double > getAvgMole  () const = 0;
+};
+
+
+template <typename MMatrixAssembler>
+class EigenDistAnalysis : public EigenDistAnalysisBase
 {
 public :
   EigenDistAnalysis (const double rmax,
-		     const vector<double > & ref_eig,
 		     const int func_numb_threads = 1);
-  ~EigenDistAnalysis () {};
+  virtual ~EigenDistAnalysis () {};
   void reinit (const double rmax,
-	       const vector<double > & ref_eig,
 	       const int func_numb_threads = 1);
-  void deposite (const CellList & clist,
-		 const vector<double> box,
-		 const vector<vector<double > > & coms,
-		 const bool do_avg);
+  virtual void deposite (const CellList & clist,
+			 const vector<double> box,
+			 const vector<vector<double > > & coms,
+			 const bool do_avg);
+  virtual void average ();
+public:
+  virtual vector<double > getStepMole () const {return step_value;}
+  virtual vector<double > getAvgMole  () const {return avg_value;}
+private:
   void deposite_mol (const CellList & clist,
 		     const vector<double> box,
 		     const vector<vector<double > > & waters);
   void deposite_avg (const CellList & clist,
   		     const vector<double> box,
   		     const vector<vector<double > > & waters);
-  void average ();
-public:
-  double getStepQ () const {return step_Q;};
-  vector<double > getStepMole () const {return step_value;}
-  vector<double > getAvgMole  () const {return avg_value;}
-private:
   void computeMolValue (vector<double > & mol_value,
 			vector<int    > & mol_coord,
 			const CellList & clist,
@@ -43,32 +56,13 @@ private:
   		    const vector<double> box,
   		    const vector<vector<double > > & waters,
   		    const vector<double > & mol_q) ;
-  double dist2 (const vector<double> & a1,
-		const vector<double> & a2,
-		const vector<double> & box);
   double comp_eig (const double * eig,
 		   const unsigned n_eig);
   void  process_ref ();
-  void assemble_trait_mat_dist (arma::mat & VV,
-				const vector<vector<double > > & waters,
-				const vector<double > & box,
-				const int & i_index,
-				const vector<int > & i_neigh_index);
-  void assemble_trait_mat_angle (arma::mat & VV,
-				 const vector<vector<double > > & waters,
-				 const vector<double > & box,
-				 const int & i_index,
-				 const vector<int > & i_neigh_index);
-  void assemble_trait_mat_dot (arma::mat & VV,
-			       const vector<vector<double > > & waters,
-			       const vector<double > & box,
-			       const int & i_index,
-			       const vector<int > & i_neigh_index);
 private :
   vector<double > avg_value;
   vector<double > step_value;
   vector<int    > step_coord;
-  double step_Q;
   int numb_step;
 private:
   double rmax;

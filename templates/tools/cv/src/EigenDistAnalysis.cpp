@@ -45,19 +45,19 @@ const double global_coord_ref [global_coord_ref_size][3] = {
 };
 
 
-EigenDistAnalysis:: 
+template <typename MMatrixAssembler>
+EigenDistAnalysis<MMatrixAssembler>:: 
 EigenDistAnalysis (const double rmax,
-		   const vector<double > & ref_eig,
 		   const int func_numb_threads_)
 {
-  reinit (rmax, ref_eig, func_numb_threads_);
+  reinit (rmax, func_numb_threads_);
   process_ref ();
 }
 
+template <typename MMatrixAssembler>
 void
-EigenDistAnalysis:: 
+EigenDistAnalysis<MMatrixAssembler>:: 
 reinit (const double rmax_,
-	const vector<double > & ref_eig_,
 	const int func_numb_threads_)
 {
   rmax = rmax_;
@@ -66,12 +66,12 @@ reinit (const double rmax_,
   avg_value.clear();
   step_value.clear();
   step_coord.clear();
-  step_Q = 0;
   func_numb_threads = func_numb_threads_;
 }
 
+template <typename MMatrixAssembler>
 void
-EigenDistAnalysis:: 
+EigenDistAnalysis<MMatrixAssembler>:: 
 process_ref ()
 {
   // ref_eig.resize (global_eig_ref_mat_size);
@@ -88,6 +88,7 @@ process_ref ()
   }  
   vector<double > box (3, 5.);
   ref_eig.resize (global_eig_ref_mat_size, vector<double > (global_eig_ref_mat_size, 0));
+  MMatrixAssembler mma;
   for (int ii = 0; ii < global_eig_ref_mat_size; ++ii){
     vector<int > nlist(ii+1);
     // ii + 1 neighbors
@@ -95,7 +96,7 @@ process_ref ()
       nlist[jj] = jj+1;
     }
     arma::mat VV = arma::zeros<arma::mat>(ii+1, ii+1);
-    assemble_trait_mat_dot (VV, coord_ref, box, 0, nlist);
+    mma (VV, coord_ref, box, 0, nlist);
 
     arma::vec eigs = arma::zeros<arma::vec>(ii+1);
     eig_sym(eigs, VV);
@@ -104,140 +105,11 @@ process_ref ()
       ref_eig[ii][jj] = eigs(jj);
     }    
   }
-}
+}		    
 
-inline double 
-EigenDistAnalysis:: 
-dist2 (const vector<double> & a1,
-       const vector<double> & a2,
-       const vector<double> & box)
-{
-  vector<double > diff (3);
-  for (int dd = 0; dd < 3; ++dd) diff[dd] = a1[dd] - a2[dd];
-  vector<int > shift(3, 0);
-  for (int dd = 0; dd < 3; ++dd){
-    if      (diff[dd] < -.5 * box[dd]) shift[dd] += 1;
-    else if (diff[dd] >= .5 * box[dd]) shift[dd] -= 1;
-  }
-  for (int dd = 0; dd < 3; ++dd){
-    diff[dd] += box[dd] * shift[dd];
-  }
-  return diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2];
-}
-
-void 
-EigenDistAnalysis::
-assemble_trait_mat_dist (arma::mat & VV,
-			 const vector<vector<double > > & waters,
-			 const vector<double > & box,
-			 const int & i_index,
-			 const vector<int > & i_neigh_index)
-{
-  VV.zeros();
-  for (unsigned j1 = 1; j1 < i_neigh_index.size(); ++j1){
-    int j1_index = i_neigh_index[j1];
-    for (unsigned j2 = 0; j2 < j1; ++j2){
-      int j2_index = i_neigh_index[j2];
-      double rij = sqrt (dist2 (waters[j1_index], waters[j2_index], box) );
-      VV(j1, j2) = 1./rij;
-    }
-  }
-  VV = VV + VV.t();  
-}
-		    
-static inline
-void
-diff ( vector<double> & diff,
-	const vector<double> & a1,
-	const vector<double> & a2,
-	const vector<double> & box)
-{
-  for (int dd = 0; dd < 3; ++dd) diff[dd] = a1[dd] - a2[dd];
-  vector<int > shift(3, 0);
-  for (int dd = 0; dd < 3; ++dd){
-    if      (diff[dd] < -.5 * box[dd]) shift[dd] += 1;
-    else if (diff[dd] >= .5 * box[dd]) shift[dd] -= 1;
-  }
-  for (int dd = 0; dd < 3; ++dd){
-    diff[dd] += box[dd] * shift[dd];
-  }  
-}
-
-static inline 
+template <typename MMatrixAssembler>
 double 
-dot (const vector<double> & a1,
-     const vector<double> & a2)
-{
-  return a1[0] * a2[0] + a1[1] * a2[1] + a1[2] * a2[2];
-}
-
-
-static inline 
-double 
-norm2 (const vector<double> & diff)
-{
-  return dot (diff, diff);
-}
-
-void 
-EigenDistAnalysis::
-assemble_trait_mat_angle (arma::mat & VV,
-			  const vector<vector<double > > & waters,
-			  const vector<double > & box,
-			  const int & i_index,
-			  const vector<int > & i_neigh_index)
-{
-  for (unsigned j1 = 0; j1 < i_neigh_index.size(); ++j1){
-    VV(j1, j1) = 1.;
-  }
-  
-  vector<double > diff1(3), diff2(3);
-  for (unsigned j1 = 1; j1 < i_neigh_index.size(); ++j1){
-    int j1_index = i_neigh_index[j1];
-    diff (diff1, waters[j1_index], waters[i_index], box) ;    
-    // for (unsigned kk = 0; kk < 3; ++kk) cout << diff1[kk] << " " ;
-    // cout << endl;
-    double r1 = sqrt(norm2 (diff1));
-    for (unsigned j2 = 0; j2 < j1; ++j2){
-      int j2_index = i_neigh_index[j2];
-      diff (diff2, waters[j2_index], waters[i_index], box) ;    
-      // for (unsigned kk = 0; kk < 3; ++kk) cout << diff2[kk] << " " ;
-      // cout << endl;
-      double r2 = sqrt(norm2 (diff2));
-      VV(j1, j2) = dot (diff1, diff2) / r1 / r2;
-      VV(j2, j1) = VV(j1, j2);
-    }
-  }
-}
-		    
-void 
-EigenDistAnalysis::
-assemble_trait_mat_dot (arma::mat & VV,
-			  const vector<vector<double > > & waters,
-			  const vector<double > & box,
-			  const int & i_index,
-			  const vector<int > & i_neigh_index)
-{
-  for (unsigned j1 = 0; j1 < i_neigh_index.size(); ++j1){
-    VV(j1, j1) = 0.;
-  }
-  
-  vector<double > diff1(3), diff2(3);
-  for (unsigned j1 = 1; j1 < i_neigh_index.size(); ++j1){
-    int j1_index = i_neigh_index[j1];
-    diff (diff1, waters[j1_index], waters[i_index], box) ;    
-    for (unsigned j2 = 0; j2 < j1; ++j2){
-      int j2_index = i_neigh_index[j2];
-      diff (diff2, waters[j2_index], waters[i_index], box) ;    
-      VV(j1, j2) = dot (diff1, diff2);
-      VV(j2, j1) = VV(j1, j2);
-    }
-  }
-}
-		    
-
-double 
-EigenDistAnalysis:: 
+EigenDistAnalysis<MMatrixAssembler>:: 
 comp_eig (const double * eig,
 	  const unsigned n_eig)
 {
@@ -257,8 +129,9 @@ comp_eig (const double * eig,
   return sqrt(diff);
 } 
 
+template <typename MMatrixAssembler>
 void
-EigenDistAnalysis:: 
+EigenDistAnalysis<MMatrixAssembler>:: 
 average ()
 {
   if (numb_step == 0) return;
@@ -267,8 +140,9 @@ average ()
   }
 }
 
+template <typename MMatrixAssembler>
 void
-EigenDistAnalysis:: 
+EigenDistAnalysis<MMatrixAssembler>:: 
 computeMolValue (vector<double > & mol_value,
 		 vector<int    > & mol_coord,
 		 const CellList & clist,
@@ -333,12 +207,13 @@ computeMolValue (vector<double > & mol_value,
     }
   }
 
+  MMatrixAssembler mma;
   for (unsigned i_index = 0; i_index < numb_water; ++i_index){    
     // assemble matrix for i_index
     unsigned nearest_n = i_neigh_index[i_index].size();
     arma::mat VV = arma::zeros<arma::mat>(nearest_n, nearest_n);
     arma::vec eigs = arma::zeros<arma::vec>(nearest_n);
-    assemble_trait_mat_dot (VV, waters, box, i_index, i_neigh_index[i_index]);
+    mma (VV, waters, box, i_index, i_neigh_index[i_index]);
     // compute eigen value for VV
     eig_sym(eigs, VV);
     // record the result
@@ -352,8 +227,9 @@ computeMolValue (vector<double > & mol_value,
   }
 }
 
+template <typename MMatrixAssembler>
 void
-EigenDistAnalysis:: 
+EigenDistAnalysis<MMatrixAssembler>:: 
 avgMolValue (vector<double > & avg_mol_q,
 	     const CellList & clist,
 	     const vector<double> box,
@@ -428,8 +304,9 @@ avgMolValue (vector<double > & avg_mol_q,
   }
 }
 
+template <typename MMatrixAssembler>
 void
-EigenDistAnalysis:: 
+EigenDistAnalysis<MMatrixAssembler>:: 
 deposite (const CellList & clist,
 	  const vector<double> box,
 	  const vector<vector<double > > & waters, 
@@ -443,8 +320,9 @@ deposite (const CellList & clist,
   }
 }
 
+template <typename MMatrixAssembler>
 void
-EigenDistAnalysis:: 
+EigenDistAnalysis<MMatrixAssembler>:: 
 deposite_mol (const CellList & clist,
 	      const vector<double> box,
 	      const vector<vector<double > > & waters)
@@ -466,8 +344,9 @@ deposite_mol (const CellList & clist,
   numb_step ++;
 }
 
+template <typename MMatrixAssembler>
 void
-EigenDistAnalysis:: 
+EigenDistAnalysis<MMatrixAssembler>:: 
 deposite_avg (const CellList & clist,
 	      const vector<double> box,
 	      const vector<vector<double > > & waters)
@@ -490,3 +369,8 @@ deposite_avg (const CellList & clist,
 
   numb_step ++;
 }
+
+
+template class EigenDistAnalysis<assemble_trait_mat_dist>;
+template class EigenDistAnalysis<assemble_trait_mat_angle>;
+template class EigenDistAnalysis<assemble_trait_mat_dot>;
