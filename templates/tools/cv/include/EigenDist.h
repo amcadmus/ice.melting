@@ -1,57 +1,10 @@
 #pragma once
 
+#include "Defines.h"
 #include <vector>
 #include <armadillo>
 
 using namespace std;
-
-inline void
-diff ( vector<double> & diff,
-	const vector<double> & a1,
-	const vector<double> & a2,
-	const vector<double> & box)
-{
-  for (int dd = 0; dd < 3; ++dd) diff[dd] = a1[dd] - a2[dd];
-  vector<int > shift(3, 0);
-  for (int dd = 0; dd < 3; ++dd){
-    if      (diff[dd] < -.5 * box[dd]) shift[dd] += 1;
-    else if (diff[dd] >= .5 * box[dd]) shift[dd] -= 1;
-  }
-  for (int dd = 0; dd < 3; ++dd){
-    diff[dd] += box[dd] * shift[dd];
-  }  
-}
-
-inline double 
-dot (const vector<double> & a1,
-     const vector<double> & a2)
-{
-  return a1[0] * a2[0] + a1[1] * a2[1] + a1[2] * a2[2];
-}
-
-inline double 
-norm2 (const vector<double> & diff)
-{
-  return dot (diff, diff);
-}
-
-inline double 
-dist2 (const vector<double> & a1,
-       const vector<double> & a2,
-       const vector<double> & box)
-{
-  vector<double > diff (3);
-  for (int dd = 0; dd < 3; ++dd) diff[dd] = a1[dd] - a2[dd];
-  vector<int > shift(3, 0);
-  for (int dd = 0; dd < 3; ++dd){
-    if      (diff[dd] < -.5 * box[dd]) shift[dd] += 1;
-    else if (diff[dd] >= .5 * box[dd]) shift[dd] -= 1;
-  }
-  for (int dd = 0; dd < 3; ++dd){
-    diff[dd] += box[dd] * shift[dd];
-  }
-  return diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2];
-}
 
 class assemble_trait_mat_dist {
 public: 

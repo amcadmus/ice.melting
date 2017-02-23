@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector> 
+#include <cmath>
 #include "mace/CosSwitch.h"
 
 using namespace std;
@@ -68,7 +69,7 @@ evaluate (const vector<double > & dist) const
   if (r2 > rc2) {
     return 0.;
   }
-  double rinv  = 1./sqrtf(r2);
+  double rinv  = 1./sqrt(r2);
   r1 = r2 * rinv;
   
   cs.calculate();
