@@ -39,13 +39,17 @@ set sel [atomselect top all]
 \$sel set radius 0.6
 mol addrep \$mol_id
 mol addrep \$mol_id
+mol addrep \$mol_id
 mol modselect 0 \$mol_id not name MW 
 mol modselect 1 \$mol_id none
 mol modselect 2 \$mol_id none
+mol modselect 3 \$mol_id none
 mol modstyle 0 \$mol_id hbonds
 mol modstyle 1 \$mol_id bonds
 mol modstyle 2 \$mol_id vdw
+mol modstyle 3 \$mol_id vdw
 mol modcolor 1 \$mol_id ResType
+mol modcolor 3 \$mol_id Element
 display projection orthographic
 display height 4
 rotate x by $rot_angle
@@ -66,6 +70,8 @@ thres1=0.358
 thres2=0.267
 rot_angle=0
 out_tcl_dir=figs.qdef
+file_q4=""
+thres_q4=0.4
 
 # if [ $# -eq 0 ]; then
 #     usage
@@ -93,6 +99,14 @@ do
 	    ;;
 	-t2|--thres2)
 	    thres2=$2
+	    shift
+	    ;;
+	-q4|--loc-q4)
+	    file_q4=$2
+	    shift
+	    ;;
+	-tq4|--thres-q4)
+	    thres_q4=$2
 	    shift
 	    ;;
 	-ot|--o-tcl)
@@ -133,8 +147,10 @@ rgbs=""
 rm -f $out_file
 prog1=awkprog1.$$
 prog2=awkprog2.$$
+prog3=awkprog3.$$
 echo "{if (\$2 < $thres1 && \$2 > $thres2) {print \$1}}" > $prog1
 echo "{if (\$2 > $thres1) {print \$1}}" > $prog2
+echo "{if (\$2 > $thres_q4) {print \$1}}" > $prog3
 for ii in $targets; 
 do
     output="frame_`printf %09d $count`_$ii"
@@ -173,9 +189,23 @@ do
 	fi
 	count_frame2=$(($count_frame2+1))
     done
+    count_frame3=0
+    list3=""
+    if [ ! -z $file_q4 ]; then
+	for jj in `grep -v \# $file_q4/$ii | awk -f $prog3`;
+	do
+	    pjj=$jj
+	    if test $count_frame3 -eq 0; then
+		list3="residue $pjj"
+	    else
+		list3="$list3 or residue $pjj"
+	    fi
+	    count_frame3=$(($count_frame3+1))
+	done	    
+    fi
     idx_step=`echo $ii | cut -d '_' -f 2 | cut -d '_' -f 1`
-    printf "$ii count $count_frame1 $count_frame2 \r"
-    echo "$idx_step $count_frame1 $count_frame2 " >> $out_file
+    printf "$ii count $count_frame1 $count_frame2 $count_frame3 \r"
+    echo "$idx_step $count_frame1 $count_frame2 $count_frame3 " >> $out_file
     if test $count_frame1 -ne 0; then
 	echo "mol modselect 1 \$mol_id not name MW and ( $list1 )" >> $script
 	echo "mol modselect 1 \$mol_id not name MW and ( $list1 )" >> $step_script
@@ -190,12 +220,20 @@ do
 	echo "mol modselect 2 \$mol_id none" >> $script
 	echo "mol modselect 2 \$mol_id none" >> $step_script
     fi
+    if test $count_frame3 -ne 0; then
+	echo "mol modselect 3 \$mol_id not name MW and ( $list3 )" >> $script
+	echo "mol modselect 3 \$mol_id not name MW and ( $list3 )" >> $step_script
+    else
+	echo "mol modselect 3 \$mol_id none" >> $script
+	echo "mol modselect 3 \$mol_id none" >> $step_script
+    fi
+    
     echo "render Tachyon OUT_FOLDER/$output.tachyon" >> $script
     count=$(($count+1))
 done
 echo ""
 
-rm -fr $prog1 $prog2
+rm -fr $prog1 $prog2 $prog3
 
 # vmd < tmp0.tcl
 
