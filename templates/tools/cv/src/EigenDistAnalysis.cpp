@@ -1,4 +1,5 @@
 #include "EigenDistAnalysis.h"
+#include "SymmEigen.h"
 
 enum {
   global_coord_ref_size = 16,
@@ -95,14 +96,16 @@ process_ref ()
     for (int jj = 0; jj < ii+1; ++jj){
       nlist[jj] = jj+1;
     }
-    arma::mat VV = arma::zeros<arma::mat>(ii+1, ii+1);
-    mma (VV, coord_ref, box, 0, nlist);
 
-    arma::vec eigs = arma::zeros<arma::vec>(ii+1);
-    eig_sym(eigs, VV);
+    vector<double > VV;
+    mma (VV, coord_ref, box, 0, nlist);
+    vector<double > eigs (ii+1);
+    SymmEigen se (ii+1, 'L');
+    se.solve (&eigs[0], &VV[0]);
+
     // record the result
     for (int jj = 0; jj < ii+1; ++jj){
-      ref_eig[ii][jj] = eigs(jj);
+      ref_eig[ii][jj] = eigs[jj];
     }    
   }
 }		    
@@ -210,15 +213,18 @@ computeMolValue (vector<double > & mol_value,
   MMatrixAssembler mma;
   for (unsigned i_index = 0; i_index < numb_water; ++i_index){    
     // assemble matrix for i_index
-    unsigned nearest_n = i_neigh_index[i_index].size();
-    arma::mat VV = arma::zeros<arma::mat>(nearest_n, nearest_n);
-    arma::vec eigs = arma::zeros<arma::vec>(nearest_n);
+    unsigned nearest_n = i_neigh_index[i_index].size();    
+    vector<double > VV;
+    vector<double > eigs (nearest_n);
+    // arma::mat VV = arma::zeros<arma::mat>(nearest_n, nearest_n);
+    // arma::vec eigs = arma::zeros<arma::vec>(nearest_n);
     mma (VV, waters, box, i_index, i_neigh_index[i_index]);
     // compute eigen value for VV
-    eig_sym(eigs, VV);
+    SymmEigen se (nearest_n, 'L');
+    se.solve (&eigs[0], &VV[0]);
     // record the result
     mol_coord[i_index] = i_neigh_index[i_index].size();
-    mol_value[i_index] = comp_eig (&eigs(0), mol_coord[i_index]);
+    mol_value[i_index] = comp_eig (&eigs[0], mol_coord[i_index]);
     // for (unsigned kk = 0; kk < mol_coord[i_index]; ++kk){
     //   cout << eigs(kk) <<  " " ;
     // }

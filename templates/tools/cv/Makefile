@@ -5,7 +5,7 @@
 #boost-include-path=	/people/thnfs/homes/wanghan/local/include/boost-1_36
 #boost-lib-path=		/people/thnfs/homes/wanghan/local/lib
 boost-lib-option=	-lboost_program_options
-link-options=           ~/local/lib/libxdrfile.a $(boost-lib-option) -larmadillo
+link-options=           ~/local/lib/libxdrfile.a $(boost-lib-option) -llapack
 
 include_dirs = 	./include ~/local/include/ $(MKL_INCLUDE)
 

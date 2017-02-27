@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cassert>
-#include <armadillo>
 
 #include "CellList.h"
 #include "EigenDist.h"
