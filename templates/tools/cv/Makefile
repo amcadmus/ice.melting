@@ -36,7 +36,7 @@ cobjects = 	$(addprefix $(cobjects_dir)/,$(tmp_cobjects))
 
 
 C:=		gcc
-CFLAGS +=	-g -O3 -Wall 
+CFLAGS +=	-g -O3 -Wall -fopenmp
 CFLAGS += 	$(addprefix -I ,$(include_dirs))
 
 CXX:=		g++

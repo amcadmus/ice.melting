@@ -210,6 +210,7 @@ computeMolValue (vector<vector<double > > & mol_value,
   }
 
   mol_value.resize (numb_water);
+#pragma omp parallel for num_threads (func_numb_threads) 
   for (unsigned jj = 0; jj < mol_value.size(); ++jj){
     mol_value[jj].resize (tmp_spv.valueDim());
     fill (mol_value[jj].begin(), mol_value[jj].end(), 0.);
@@ -309,6 +310,7 @@ avgMolValue (vector<vector<double > > & avg_mol_q,
     }
   }
 
+#pragma omp parallel for num_threads (func_numb_threads) 
   for (unsigned ii = 0; ii < avg_mol_q.size(); ++ii){
     for (unsigned kk = 0; kk < avg_mol_q[ii].size(); ++kk){
       avg_mol_q[ii][kk] /= double(count_add[ii]);
@@ -363,11 +365,13 @@ deposite_mol (const CellList & clist,
   SteinhardtPairValue<LL> tmp_spv (rmin, rmax);
   vector<double > sum_value (tmp_spv.valueDim(), 0.);
   for (unsigned kk = 0; kk < sum_value.size(); ++kk){
+#pragma omp parallel for num_threads (func_numb_threads) 
     for (unsigned jj = 0; jj < mol_value.size(); ++jj){
       sum_value[kk] += mol_value[jj][kk];
     }
   }  
   double sum_coord (0);
+#pragma omp parallel for num_threads (func_numb_threads) 
   for (unsigned jj = 0; jj < mol_coord.size(); ++jj){
     sum_coord += mol_coord[jj];
   }  
@@ -380,6 +384,7 @@ deposite_mol (const CellList & clist,
   // cout << "step " << numb_step << " l2 " << l2_norm / sum_coord << endl;
   step_Q = l2_norm / sum_coord;
 
+#pragma omp parallel for num_threads (func_numb_threads) 
   for (unsigned ii = 0; ii < numb_water; ++ii){
     step_value[ii] = 0.;
     if (mol_coord[ii] == 0){
@@ -393,6 +398,7 @@ deposite_mol (const CellList & clist,
     }
     step_value[ii] = sqrt(step_value[ii]);
   }
+#pragma omp parallel for num_threads (func_numb_threads) 
   for (unsigned ii = 0; ii < numb_water; ++ii){
     avg_value[ii] += step_value[ii];
   }
@@ -423,6 +429,7 @@ deposite_avg (const CellList & clist,
   vector<vector<double > > mol_value;
   vector<double > mol_coord;
   computeMolValue (mol_value, mol_coord, clist, box, waters);
+#pragma omp parallel for num_threads (func_numb_threads) 
   for (unsigned ii = 0; ii < numb_water; ++ii){
     if (mol_coord[ii] == 0){
       cerr << "coordination number of mol " << ii << " is 0, some thing maybe wrong" << endl;
@@ -438,6 +445,7 @@ deposite_avg (const CellList & clist,
   vector<vector<double > > avg_mol_q ;
   avgMolValue (avg_mol_q, clist, box, waters, mol_value);  
 
+#pragma omp parallel for num_threads (func_numb_threads) 
   for (unsigned ii = 0; ii < numb_water; ++ii){
     step_value[ii] = 0.;
     for (unsigned kk = 0; kk < mol_value[ii].size(); ++kk){
@@ -446,6 +454,7 @@ deposite_avg (const CellList & clist,
     }
     step_value[ii] = sqrt(step_value[ii]);
   }
+#pragma omp parallel for num_threads (func_numb_threads) 
   for (unsigned ii = 0; ii < numb_water; ++ii){
     avg_value[ii] += step_value[ii];
   }

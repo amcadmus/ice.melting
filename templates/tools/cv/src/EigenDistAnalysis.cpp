@@ -179,7 +179,7 @@ computeMolValue (vector<double > & mol_value,
     i_neigh_index[ii].reserve (32);
   }
 
-// #pragma omp parallel for num_threads (func_numb_threads) 
+#pragma omp parallel for num_threads (func_numb_threads) 
   for (int tt = 0; tt < func_numb_threads; ++tt){ 
     for (unsigned iCellIndex = tt;
 	 iCellIndex < cellIndexUpper;
@@ -211,6 +211,7 @@ computeMolValue (vector<double > & mol_value,
   }
 
   MMatrixAssembler mma;
+#pragma omp parallel for num_threads (func_numb_threads) 
   for (unsigned i_index = 0; i_index < numb_water; ++i_index){    
     // assemble matrix for i_index
     unsigned nearest_n = i_neigh_index[i_index].size();    
@@ -262,7 +263,7 @@ avgMolValue (vector<double > & avg_mol_q,
   // loop
   IntVectorType nCell = clist.getNumCell();
   unsigned cellIndexUpper = unsigned(nCell.x * nCell.y * nCell.z);
-// #pragma omp parallel for num_threads (func_numb_threads) 
+#pragma omp parallel for num_threads (func_numb_threads) 
   for (int tt = 0; tt < func_numb_threads; ++tt){ 
     for (unsigned iCellIndex = tt;
 	 iCellIndex < cellIndexUpper;
@@ -305,6 +306,7 @@ avgMolValue (vector<double > & avg_mol_q,
     }
   }
 
+#pragma omp parallel for num_threads (func_numb_threads) 
   for (unsigned ii = 0; ii < avg_mol_q.size(); ++ii){
     avg_mol_q[ii] /= double(count_add[ii]);
   }
