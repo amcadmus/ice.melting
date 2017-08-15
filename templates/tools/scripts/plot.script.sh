@@ -30,6 +30,7 @@ cd $out_folder
 count=0; 
 for ii in frame_*png; 
 do 
+    test ! -f $ii && exit
     ln -sf $ii tmp_`printf %06d $count`.png; 
     count=$(($count+1)); 
 done
