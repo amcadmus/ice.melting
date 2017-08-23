@@ -17,7 +17,7 @@
 #include "xdrfile/xdrfile_xtc.h"
 #include "Defines.h"
 #include "CellList.h"
-#include "LocalVolumeAnalysis.h"
+#include "SteinhardtHillAnalysis.h"
 
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
@@ -105,12 +105,6 @@ print_mol (const string dir,
   }
 }
 
-static int isDirectory(const char *path) {
-   struct stat statbuf;
-   if (stat(path, &statbuf) != 0)
-       return 0;
-   return S_ISDIR(statbuf.st_mode);
-}
 
 int main(int argc, char * argv[])
 {
@@ -118,6 +112,7 @@ int main(int argc, char * argv[])
   string ifile, ofile, odir;
   int func_numb_threads;
   int numb_mol_atom;
+  int order;
   double r0, r1, r2, r3;
   bool p_detail (false), p_mol(false), do_avg(false);
   
@@ -126,18 +121,19 @@ int main(int argc, char * argv[])
       ("help,h", "print this message")
       ("begin,b", po::value<double > (&begin)->default_value(0.f), "start time")
       ("end,e",   po::value<double > (&end  )->default_value(0.f), "end   time")
-      ("r0",   po::value<double > (&r0)->default_value(0.31), "r0")
-      ("r1",   po::value<double > (&r1)->default_value(0.36), "r1")
-      ("r2",   po::value<double > (&r2)->default_value(0.48), "r2")
-      ("r3",   po::value<double > (&r3)->default_value(0.52), "r3")
+      ("r0",   po::value<double > (&r0)->default_value(0.31), "the r0 for r switch function")
+      ("r1",   po::value<double > (&r1)->default_value(0.36), "the r1 for r switch function")
+      ("r2",   po::value<double > (&r2)->default_value(0.48), "the r2 for r switch function")
+      ("r3",   po::value<double > (&r3)->default_value(0.52), "the r3 for r switch function")
+      ("order,l",   po::value<int > (&order)->default_value(6), "the order of the Steinhardt parameter")      
       ("loc-avg,a", "the local averaged Steinhardt parameter due to Leichner and Dellago")      
       ("detail", "print the Q value of each molecule at each step")
       ("mol-value", "print the Q trajectory for each atom is printed")
       ("numb-mol-atom", po::value<int > (&numb_mol_atom)->default_value(4), "number of sites in the water molecule")
       ("numb-threads,t", po::value<int > (&func_numb_threads)->default_value(1), "number of threads")
       ("input,f",   po::value<string > (&ifile)->default_value ("traj.xtc"), "the input .xtc file")
-      ("output,o",  po::value<string > (&ofile)->default_value ("locvol.out"), "the output file")
-      ("output-dir",  po::value<string > (&odir)->default_value ("locvol"), "the output directory");
+      ("output,o",  po::value<string > (&ofile)->default_value ("steinhardt.out"), "the output file")
+      ("output-dir",  po::value<string > (&odir)->default_value ("steinhardt"), "the output directory of Q value information");
   
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -167,14 +163,13 @@ int main(int argc, char * argv[])
   if (p_detail){
     cout << "# output dir: " << odir << endl;
   }
-  cout << "# r0: " << r0 << endl;
-  cout << "# r1: " << r1 << endl;
-  cout << "# r2: " << r2 << endl;
-  cout << "# r3: " << r3 << endl;
+  cout << "# rmin: " << r0 << endl;
+  cout << "# rmax: " << r1 << endl;
+  cout << "# rmin: " << r2 << endl;
+  cout << "# rmax: " << r3 << endl;
+  cout << "# order: " << order << endl;
   cout << "###################################################" << endl;  
   
-  LocalVolumeAnalysis lva (r0, r1, r2, r3, func_numb_threads);
-
   XDRFILE *fp;
   int natoms, step;
   float time;
@@ -225,10 +220,31 @@ int main(int argc, char * argv[])
   waters.reserve (nmolecules * 3);
 
   CellList clist (nmolecules, vbox, cellSize);
+  SteinhardtHillAnalysisBase * p_sa;
+  switch (order){
+  case 3: 
+      p_sa = new SteinhardtHillAnalysis<3> (r0, r1, r2, r3, func_numb_threads);
+      break;
+  case 4:
+      p_sa = new SteinhardtHillAnalysis<4> (r0, r1, r2, r3, func_numb_threads);
+      break;
+  case 6:
+      p_sa = new SteinhardtHillAnalysis<6> (r0, r1, r2, r3, func_numb_threads);
+      break;
+  default:
+      cerr << " unsupported Steinhardt order " << order << " exit " << endl;
+      return 1;
+  }
 
   int countread = 0;
+  FILE *fout = fopen (ofile.c_str(), "w");
+  if (fout == NULL){
+    cerr << "cannot open file " << ofile << endl;
+    exit (1);
+  }
+  fprintf (fout, "# time  tot_numb_donator  tot_numb_acceptor\n");
   if (p_detail || p_mol){
-    if (! isDirectory (odir.c_str()) ) {
+    if (access (odir.c_str(), 0) == -1) {
       cout << "# dir " << odir << " does not exist, create." << endl;
       if (mkdir (odir.c_str(), 0755)){
 	cerr << "# dir " << odir << " creation failed." << endl;
@@ -283,37 +299,28 @@ int main(int argc, char * argv[])
     vector<double > vect_box(3);
     for (int dd = 0; dd < 3; ++dd) vect_box[dd] = box[dd][dd];
 
-    lva.deposite (clist, vect_box, coms, do_avg);
+    p_sa->deposite (clist, vect_box, coms, do_avg);
 
     // fprintf (fout, "%f\t %f\n", time, p_sa->getStepQ());
     if (p_detail){
-      print_step (odir, step, time, lva.getStepMole());
+      print_step (odir, step, time, p_sa->getStepMole());
     }
     if (p_mol){
-      print_mol (odir, step, time, lva.getStepMole(), func_numb_threads);
+      print_mol (odir, step, time, p_sa->getStepMole(), func_numb_threads);
     }
   }
   printf ("\n");
 
-  lva.average();
-  vector<double > avg = lva.getAvgMole();
-  FILE *fout = fopen (ofile.c_str(), "w");
-  double sum = 0;
-  if (fout == NULL){
-    cerr << "cannot open file " << ofile << endl;
-    exit (1);
-  }
-  fprintf (fout, "# time  tot_numb_donator  tot_numb_acceptor\n");
+  p_sa->average();
+  vector<double > avg = p_sa->getAvgMole();
   for (unsigned ii = 0; ii < avg.size(); ++ii){
     fprintf (fout, "%06d %f\n", ii, avg[ii]);
-    sum += avg[ii];
   }
-  fclose (fout);
-
-  cout << sum / double(avg.size()) << endl;
   
   free (xx);  
+  fclose (fout);
   xdrfile_close (fp);
+  delete p_sa;
 
   return 0;
 }

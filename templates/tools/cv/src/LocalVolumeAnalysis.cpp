@@ -179,7 +179,7 @@ avgMolValue (vector<double > & avg_mol_q,
   assert (ziter * clist.getCellSize().z >= rup);
 
   unsigned numb_water = waters.size();
-  vector<unsigned > count_add (numb_water, 0);
+  vector<double > count_add (numb_water, 0.);
   avg_mol_q.resize(numb_water);
   fill (avg_mol_q.begin(), avg_mol_q.end(), 0.);
 
@@ -188,6 +188,17 @@ avgMolValue (vector<double > & avg_mol_q,
   unsigned cellIndexUpper = unsigned(nCell.x * nCell.y * nCell.z);
 #pragma omp parallel for num_threads (func_numb_threads) 
   for (int tt = 0; tt < func_numb_threads; ++tt){ 
+    CosHill<double > hill;
+    double rr, hill_v, hill_d;
+    hill.reinit (r0, r1, r2, r3);
+    rr = 0;
+    hill_v = 0;
+    hill_d = 0;
+    PointerArray<double> ai, av, ad;
+    ai.push_back (&rr);
+    av.push_back (&hill_v);
+    ad.push_back (&hill_d);
+    hill.registerData (ai, av, ad);    
     for (unsigned iCellIndex = tt;
 	 iCellIndex < cellIndexUpper;
 	 iCellIndex += func_numb_threads){
@@ -219,9 +230,11 @@ avgMolValue (vector<double > & avg_mol_q,
 	    }
 	    double r2 = diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2];
 	    if (r2 < rup2){
+	      rr = sqrt(r2);
+	      hill.calculate ();
 	      // deposite to i
-	      avg_mol_q[i_index] += mol_q[j_index];
-	      count_add[i_index] ++;
+	      avg_mol_q[i_index] += hill_v * mol_q[j_index];
+	      count_add[i_index] += hill_v;
 	    }
 	  }
 	}
