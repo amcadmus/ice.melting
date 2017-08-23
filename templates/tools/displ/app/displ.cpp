@@ -51,7 +51,7 @@ void print_step (const string dir,
     cerr << "cannot open file " << fpath << endl;
     exit (1);
   }
-  fprintf (fp, "# mol_idx mole_Q_value\n");
+  // fprintf (fp, "# mol_idx mole_Q_value\n");
   for (unsigned ii = 0; ii < step_value.size(); ++ii){
     fprintf (fp, "%d %f\n", ii, step_value[ii]);
   }
@@ -195,7 +195,7 @@ int main(int argc, char * argv[])
   vector<vector<vector<double > > > waters;
   waters.reserve (nmolecules * 3);
 
-  Displacement displ (mybox);
+  Displacement displ;
 
   int countread = 0;
   if (p_detail || p_mol){
@@ -245,8 +245,12 @@ int main(int argc, char * argv[])
       }
       coms.push_back (read_com);
     }
+    vector<double > mybox(3);
+    mybox[0] = box[0][0];
+    mybox[1] = box[1][1];
+    mybox[2] = box[2][2];  
 
-    displ.deposite (coms);
+    displ.deposite (coms, mybox);
 
     // fprintf (fout, "%f\t %f\n", time, p_sa->getStepQ());
     if (p_detail){
