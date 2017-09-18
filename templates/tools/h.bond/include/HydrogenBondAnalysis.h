@@ -17,6 +17,10 @@ public :
 		 const vector<double> box,
 		 const vector<vector<vector<double > > > & waters);
   void average ();
+  void computeBondList (vector<vector<int > > & bond_list,
+			const CellList & clist,
+			const vector<double> box,
+			const vector<vector<vector<double > > > & waters) const;
 public :
   vector<double > avg_count_acc;
   vector<double > avg_count_don;
@@ -192,5 +196,98 @@ deposite (const CellList & clist,
   }
   numb_step ++;
 }
+
+
+template<typename HydrogenBond>
+void
+HydrogenBondAnalysis<HydrogenBond> :: 
+computeBondList (vector<vector<int > > & bond_list,
+		 const CellList & clist,
+		 const vector<double> box,
+		 const vector<vector<vector<double > > > & waters) const
+{  
+  double rup = hydrogen_bond.getRcut();
+  int xiter = rup / clist.getCellSize().x;
+  if (xiter * clist.getCellSize().x < rup) xiter ++;
+  int yiter = rup / clist.getCellSize().y;
+  if (yiter * clist.getCellSize().y < rup) yiter ++;
+  int ziter = rup / clist.getCellSize().z;
+  if (ziter * clist.getCellSize().z < rup) ziter ++;
+  assert (xiter * clist.getCellSize().x >= rup);
+  assert (yiter * clist.getCellSize().y >= rup);
+  assert (ziter * clist.getCellSize().z >= rup);
+
+  IntVectorType nCell = clist.getNumCell();
+  
+  unsigned numb_water = waters.size();
+  assert (numb_water == avg_count_acc.size());
+  assert (numb_water == avg_count_don.size());
+  assert (numb_water == step_count_acc.size());
+  assert (numb_water == step_count_don.size());
+  
+  bond_list.clear();
+  bond_list.resize (numb_water);
+  
+  unsigned cellIndexUpper = unsigned(nCell.x * nCell.y * nCell.z);
+
+  for (unsigned iCellIndex = 0;
+       iCellIndex < cellIndexUpper;
+       iCellIndex += 1){
+    const vector<unsigned> & iCellList (clist.getList()[iCellIndex]);
+    vector<unsigned > neighborCellIndex =
+	clist.neighboringCellIndex (iCellIndex, IntVectorType (xiter, yiter, ziter));
+    // loop of all neighboring cells of i
+    for (unsigned iNeighborCellIndex = 0;
+	 iNeighborCellIndex < neighborCellIndex.size();
+	 ++iNeighborCellIndex){
+      unsigned jCellIndex = neighborCellIndex[iNeighborCellIndex];
+      const vector<unsigned> & jCellList (clist.getList()[jCellIndex]);
+      bool sameCell (iCellIndex == jCellIndex);
+      for (unsigned ii = 0; ii < iCellList.size(); ++ii){
+	int i_index = iCellList[ii];
+	for (unsigned jj = 0; jj < jCellList.size(); ++jj){
+	  if (sameCell && ii == jj) continue;	    
+	  int j_index = jCellList[jj];
+	  if (i_index >= j_index) continue;
+	  vector<double > io(3); 
+	  for (int dd = 0; dd < 3; ++dd) io[dd] = waters[i_index][0][dd];
+	  vector<double > jo(3);
+	  for (int dd = 0; dd < 3; ++dd) jo[dd] = waters[j_index][0][dd];
+	  vector<double > diff (3);
+	  for (int dd = 0; dd < 3; ++dd) diff[dd] = jo[dd] - io[dd];
+	  vector<int > shift(3, 0);
+	  for (int dd = 0; dd < 3; ++dd){
+	    if      (diff[dd] < -.5 * box[dd]) shift[dd] += 1;
+	    else if (diff[dd] >= .5 * box[dd]) shift[dd] -= 1;
+	  }
+	  vector<vector<double > > j_water = waters[j_index];
+	  for (int kk = 0; kk < 3; ++kk){
+	    for (int dd = 0; dd < 3; ++dd){
+	      j_water[kk][dd] += box[dd] * shift[dd];
+	    }
+	  }
+	  // // un-directional
+	  // if (hydrogen_bond (waters[i_index], j_water) ||
+	  //     hydrogen_bond (j_water, waters[i_index]) ){
+	  //   bond_list[i_index].push_back (j_index);
+	  //   bond_list[j_index].push_back (i_index);
+	  // }
+	  // directional donnor -> acceptor
+	  if (hydrogen_bond (waters[i_index], j_water)){
+	    bond_list[i_index].push_back (j_index);	    
+	  }
+	  if (hydrogen_bond (j_water, waters[i_index])){
+	    bond_list[j_index].push_back (i_index);
+	  }
+	}
+      }
+    }
+  }
+
+  for (unsigned ii = 0; ii < bond_list.size(); ++ii){
+    sort (bond_list[ii].begin(), bond_list[ii].end());
+  }
+}
+
 
 
