@@ -1,5 +1,6 @@
 #include "CellList.h"
 #include <iostream>
+using namespace std;
 
 CellList::
 CellList (const unsigned & numAtom,
@@ -112,21 +113,33 @@ rebuild (const std::vector<std::vector<ValueType > > & coord)
 unsigned CellList::
 calCellIndex (const std::vector<ValueType > & coord) const
 {
-  unsigned ix = coord[0] / cellSize.x;
-  unsigned iy = coord[1] / cellSize.y;
-  unsigned iz = coord[2] / cellSize.z;
-  if (ix >= unsigned(nCell.x)){
+  int ix = coord[0] / cellSize.x;
+  int iy = coord[1] / cellSize.y;
+  int iz = coord[2] / cellSize.z;
+  if (ix >= int(nCell.x)){
     std::cerr << "error index " << std::endl;
     ix = nCell.x - 1;
   }
-  if (iy >= unsigned(nCell.y)){
+  else if (ix < 0) {
+    std::cerr << "error index " << std::endl;
+    ix = 0;
+  } 
+  if (iy >= int(nCell.y)){
     std::cerr << "error index " << std::endl;
     iy = nCell.y - 1;
   }
-  if (iz >= unsigned(nCell.z)){
+  else if (iy < 0) {
+    std::cerr << "error index " << std::endl;
+    iy = 0;
+  } 
+  if (iz >= int(nCell.z)){
     std::cerr << "error index " << std::endl;
     iz = nCell.z - 1;
   }
+  else if (iz < 0) {
+    std::cerr << "error index " << std::endl;
+    iz = 0;
+  } 
   return index3to1 (ix, iy, iz);
 }
 
@@ -137,9 +150,9 @@ neighboringCellIndex (const unsigned cellIndex,
 {
   std::vector<unsigned > cells;
   IntVectorType nNei (nNei_);
-  if (nNei.x > ((nCell.x - 1) >> 1)) nNei.x = ((nCell.x - 1) >> 1);
-  if (nNei.y > ((nCell.y - 1) >> 1)) nNei.y = ((nCell.y - 1) >> 1);
-  if (nNei.z > ((nCell.z - 1) >> 1)) nNei.z = ((nCell.z - 1) >> 1);
+  // if (nNei.x > ((nCell.x - 1) >> 1)) nNei.x = ((nCell.x - 1) >> 1);
+  // if (nNei.y > ((nCell.y - 1) >> 1)) nNei.y = ((nCell.y - 1) >> 1);
+  // if (nNei.z > ((nCell.z - 1) >> 1)) nNei.z = ((nCell.z - 1) >> 1);
 
   IntVectorType refIdx, tgtIdx;
   index1to3 (cellIndex, refIdx.x, refIdx.y, refIdx.z);
@@ -166,8 +179,9 @@ neighboringCellIndex (const unsigned cellIndex,
   cells.push_back (cellIndex);
 
   std::sort (cells.begin(), cells.end());
-  std::unique (cells.begin(), cells.end());
-  
+  vector<unsigned>::iterator new_end = std::unique (cells.begin(), cells.end());
+  cells.erase (new_end, cells.end());
+
   return cells;
 }
 

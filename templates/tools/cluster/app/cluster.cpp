@@ -54,10 +54,12 @@ print_numb_cluster (FILE * fout,
 		    const vector<vector<int > > & clstr_list)
 {
   int count = 0;
+  unsigned max = 0;
   for (unsigned ii = 0; ii < clstr_list.size(); ++ii){
     if (clstr_list[ii].size() != 0) count ++;
+    if (clstr_list[ii].size() > max) max = clstr_list[ii].size();
   }
-  fprintf (fout, "%09d %d\n", step, count);
+  fprintf (fout, "%09d %d %d\n", step, count, max);
 }
 
 void
