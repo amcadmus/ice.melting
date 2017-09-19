@@ -61,8 +61,8 @@ int main(int argc, char * argv[])
       ("numb-mol-atom", po::value<int > (&numb_mol_atom)->default_value(4), "number of sites in the water molecule")
       ("numb-threads,t", po::value<int > (&func_numb_threads)->default_value(1), "number of threads")
       ("input,f",   po::value<string > (&ifile)->default_value ("traj.xtc"), "the input .xtc file")
-      ("output,o",  po::value<string > (&ofile)->default_value ("nhbond.out"), "the output file")
-      ("output-dir",  po::value<string > (&odir)->default_value ("nhbond"), "the output directory of H-bond detailed information");
+      ("output,o",  po::value<string > (&ofile)->default_value ("hbring.out"), "the output file")
+      ("output-dir",  po::value<string > (&odir)->default_value ("hbring"), "the output directory of H-bond detailed information");
  
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -244,16 +244,26 @@ int main(int argc, char * argv[])
     //   cout << endl;
     // }
 
-    for (unsigned tt = 0; tt < r_list.size(); ++tt){
-      cout << " atom " << tt << endl;
-      for (unsigned jj = 0; jj < r_list[tt].size(); ++jj){
-	cout << "ring " << jj << "  " ;
-	for (unsigned kk = 0; kk < r_list[tt][jj].size(); ++kk){
-	  cout << r_list[tt][jj][kk] << " ";
-	}
-	cout << endl;
+    // for (unsigned tt = 0; tt < r_list.size(); ++tt){
+    //   cout << " atom " << tt << endl;
+    //   for (unsigned jj = 0; jj < r_list[tt].size(); ++jj){
+    // 	cout << "ring " << jj << "  " ;
+    // 	for (unsigned kk = 0; kk < r_list[tt][jj].size(); ++kk){
+    // 	  cout << r_list[tt][jj][kk] << " ";
+    // 	}
+    // 	cout << endl;
+    //   }
+    //   // break;
+    // }
+
+    vector<vector<int > > ur_list;
+    ra.unique_list (ur_list, r_list);
+    for (unsigned tt = 0; tt < ur_list.size(); ++tt){
+      cout << tt << " \t " ;
+      for (unsigned kk = 0; kk < ur_list[tt].size(); ++kk){
+    	cout << ur_list[tt][kk] << " ";
       }
-      // break;
+      cout << endl;
     }
     
     return 0;

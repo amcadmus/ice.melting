@@ -2,7 +2,19 @@
 
 #include <iostream>
 #include <vector>
+#include <algorithm>
 using namespace std;
+
+class Ring 
+{
+public:
+  Ring (const vector<int > & list);
+  bool operator < (const Ring & b ) const;
+  bool operator == (const Ring & b ) const;
+  const vector<int> & get_data () const {return data;}
+private:
+  vector<int > data;
+};
 
 class RingAnalysis 
 {
@@ -10,6 +22,8 @@ public:
   void compute (vector<vector<vector<int > > > & ring_list,
 		const vector<vector<int > > & hbond_list, 
 		const int depth = 10);
+  void unique_list (vector<vector<int > > & u_list,
+		    const vector<vector<vector<int > > > & ring_list) const;
 private:
   void compute (vector<vector<int > > & ring_list,
 		const int i_idx,
@@ -22,6 +36,53 @@ private:
 }
     ;
 
+
+Ring::
+Ring (const vector<int > & list)
+    :data(list)
+{
+}
+
+bool
+Ring::
+operator < (const Ring & b) const 
+{
+  if (data.size () < b.get_data().size()) {
+    return true;
+  }
+  else if (data.size () > b.get_data().size()){
+    return false;
+  }
+  else {
+    vector<int > da (data);
+    vector<int > db (b.get_data());
+    sort (da.begin(), da.end());
+    sort (db.begin(), db.end());
+    for (unsigned ii = 0; ii < da.size(); ++ii){
+      if (da[ii] < db[ii]) {
+	return true;
+      }
+      else if (da[ii] > db[ii]) {
+	return false;
+      }
+    }
+    return false;
+  }
+}
+
+bool
+Ring::
+operator == (const Ring & b) const 
+{
+  if (data.size() != b.get_data().size()) return false;
+
+  vector<int > da (data);
+  vector<int > db (b.get_data());
+  sort (da.begin(), da.end());
+  sort (db.begin(), db.end());
+  
+  return da == db;
+}
 
 void
 RingAnalysis::
@@ -228,5 +289,27 @@ remove_dupl (vector<vector<int > > & ring_list)
     }
     // cout << orig.size() << "  ->  " << ring_list.size() << endl;
   }
+}
+
+void
+RingAnalysis::
+unique_list (vector<vector<int > > & u_list,
+	     const vector<vector<vector<int > > > & ring_list) const
+{
+  u_list.clear();
+  vector<Ring > rlist;
+  for (unsigned ii = 0; ii < ring_list.size(); ++ii){
+    for (unsigned jj = 0; jj < ring_list[ii].size(); ++jj){
+      rlist.push_back (Ring(ring_list[ii][jj]));
+    }
+  }  
+  sort (rlist.begin(), rlist.end());
+  vector<Ring>::iterator e_uniq = unique (rlist.begin(), rlist.end());
+  
+  for (vector<Ring>::iterator iter = rlist.begin();
+       iter != e_uniq;
+       ++iter ){
+    u_list.push_back (iter->get_data());
+  }  
 }
 
