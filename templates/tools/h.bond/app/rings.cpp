@@ -234,7 +234,7 @@ int main(int argc, char * argv[])
     
     RingAnalysis ra;
     vector<vector<vector<int > > > r_list;
-    ra.compute (r_list, h_list, 12);
+    ra.compute (r_list, h_list, 10);
 
     // for (unsigned jj = 0; jj < r_list[0].size(); ++jj){
     //   cout << "ring " << jj << "  " ;
@@ -245,7 +245,6 @@ int main(int argc, char * argv[])
     // }
 
     for (unsigned tt = 0; tt < r_list.size(); ++tt){
-      ra.cut (r_list[tt]);
       cout << " atom " << tt << endl;
       for (unsigned jj = 0; jj < r_list[tt].size(); ++jj){
 	cout << "ring " << jj << "  " ;
@@ -254,6 +253,7 @@ int main(int argc, char * argv[])
 	}
 	cout << endl;
       }
+      // break;
     }
     
     return 0;

@@ -266,19 +266,19 @@ computeBondList (vector<vector<int > > & bond_list,
 	      j_water[kk][dd] += box[dd] * shift[dd];
 	    }
 	  }
-	  // // un-directional
-	  // if (hydrogen_bond (waters[i_index], j_water) ||
-	  //     hydrogen_bond (j_water, waters[i_index]) ){
-	  //   bond_list[i_index].push_back (j_index);
-	  //   bond_list[j_index].push_back (i_index);
-	  // }
-	  // directional donnor -> acceptor
-	  if (hydrogen_bond (waters[i_index], j_water)){
-	    bond_list[i_index].push_back (j_index);	    
-	  }
-	  if (hydrogen_bond (j_water, waters[i_index])){
+	  // un-directional
+	  if (hydrogen_bond (waters[i_index], j_water) ||
+	      hydrogen_bond (j_water, waters[i_index]) ){
+	    bond_list[i_index].push_back (j_index);
 	    bond_list[j_index].push_back (i_index);
 	  }
+	  // // directional donnor -> acceptor
+	  // if (hydrogen_bond (waters[i_index], j_water)){
+	  //   bond_list[i_index].push_back (j_index);	    
+	  // }
+	  // if (hydrogen_bond (j_water, waters[i_index])){
+	  //   bond_list[j_index].push_back (i_index);
+	  // }
 	}
       }
     }

@@ -10,8 +10,6 @@ public:
   void compute (vector<vector<vector<int > > > & ring_list,
 		const vector<vector<int > > & hbond_list, 
 		const int depth = 10);
-  void cut (vector<vector<int > > & ring_list);
-  void cut (vector<vector<vector<int > > > & ring_list);
 private:
   void compute (vector<vector<int > > & ring_list,
 		const int i_idx,
@@ -19,6 +17,8 @@ private:
 		const int pj_idx,
 		const vector<vector<int > > & hbond_list, 
 		const int depth);
+  void cut (vector<vector<int > > & ring_list);
+  void remove_dupl (vector<vector<int > > & ring_list);
 }
     ;
 
@@ -34,6 +34,8 @@ compute (vector<vector<vector<int > > > & ring_list,
   ring_list.resize (natoms);
   
   for (int ii = 0; ii < natoms; ++ii) {
+    // if (ii % 10 == 0) cout << ii << " \r " ;
+    // cout.flush();
     compute (ring_list[ii], 
 	     ii,
 	     ii,
@@ -41,6 +43,12 @@ compute (vector<vector<vector<int > > > & ring_list,
 	     hbond_list,
 	     depth);
   }
+  // cout << endl;
+
+  for (unsigned ii = 0; ii < ring_list.size(); ++ii){
+    cut (ring_list[ii]);
+    remove_dupl (ring_list[ii]);
+  }  
 }
 
 
@@ -73,8 +81,8 @@ compute (vector<vector<int > > & ring_list,
 	compute (tmp_ring_list,
 		 i_idx,
 		 tmp_k_idx,
-		 // j_idx,
-		 -1,
+		 j_idx,
+		 // -1,
 		 hbond_list,
 		 depth - 1);
 	for (unsigned jj = 0; jj < tmp_ring_list.size(); ++jj){
@@ -87,14 +95,6 @@ compute (vector<vector<int > > & ring_list,
 }
 
 
-void
-RingAnalysis::
-cut (vector<vector<vector<int > > > & ring_list)
-{
-  for (unsigned ii = 0; ii < ring_list.size(); ++ii){
-    cut (ring_list[ii]);
-  }
-}
 
 static
 bool
@@ -118,13 +118,42 @@ same (const vector<int > & r0,
     if (count_b >= int(r0.size())) break;
   }
   int count_e = 0;
-  while (r0[r0.size() - 1 - count_e] == r1[r1.size() - 1 - count_e]) {
+  int r0_back = r0.size() - 1;
+  int r1_back = r1.size() - 1;
+  while (r0[r0_back - count_e] == r1[r1_back - count_e]) {
     count_e ++;
-    if (r0.size() - 1 - count_e < 0) break;
+    if (r0_back - count_e < 0) break;
   }
   if (count_e + count_b >= 3) return true;
   return false;
 }
+
+static
+bool
+same_bidir (const vector<int > & r0, 
+	    const vector<int > & r1) 
+{
+  if (same (r0, r1)) {
+    return true;
+  }
+  else {
+    vector<int > r1_ (r1);
+    reverse (r1_.begin() + 1, r1_.end());
+    if (same(r0, r1_)) return true;
+  }
+  return false;
+}
+
+static
+bool
+identical (const vector<int > & r0, 
+	   const vector<int > & r1)
+{
+  vector<int > r1_ (r1);
+  reverse (r1_.begin() + 1, r1_.end());
+  return (r0 == r1) || (r0 == r1_);
+}
+
 
 void
 RingAnalysis::
@@ -147,7 +176,7 @@ cut (vector<vector<int > > & ring_list)
     ring_list.push_back (orig[ref_idx]);
     for (unsigned ii = 0; ii < tag.size(); ++ii){
       if (tag[ii] == 0){
-	if (same (orig[ref_idx], orig[ii])) {
+	if (same_bidir (orig[ref_idx], orig[ii])) {
 	  assert (orig[ii].size() >= orig[ref_idx].size());
 	  // if (orig[ii].size() == orig[ref_idx].size()){
 	  //   ring_list.push_back (orig[ii]);
@@ -157,9 +186,47 @@ cut (vector<vector<int > > & ring_list)
 	    tag[ii] = 1;
 	  }
 	}
+	if (identical (orig[ref_idx], orig[ii])) {
+	  tag[ii] = 1;
+	}
       }
     }
   }
 }
 
+static 
+bool
+is_dupl (const vector<int> & rlist)
+{
+  vector<int> tmp (rlist);
+  sort (tmp.begin(), tmp.end());
+  vector<int>::iterator iter = unique (tmp.begin(), tmp.end());
+  return iter != tmp.end();
+}
+
+void
+RingAnalysis::
+remove_dupl (vector<vector<int > > & ring_list)
+{
+  bool remove = false;
+  vector<int > tag (ring_list.size());
+  for (unsigned ii = 0; ii < ring_list.size(); ++ii){
+    if (is_dupl(ring_list[ii])){
+	// for (unsigned kk = 0; kk < ring_list[ii].size(); ++kk){
+	//   cout << ring_list[ii][kk] << " ";
+	// }
+	// cout << endl;
+	tag[ii] = 1;
+	remove = true;
+    }
+  }
+  if (remove == true) {
+    vector<vector<int > > orig (ring_list);
+    ring_list.clear();
+    for (unsigned ii = 0; ii < tag.size(); ++ii){
+      if (tag[ii] == 0) ring_list.push_back (orig[ii]);
+    }
+    // cout << orig.size() << "  ->  " << ring_list.size() << endl;
+  }
+}
 
