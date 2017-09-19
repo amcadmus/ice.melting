@@ -21,7 +21,8 @@ class RingAnalysis
 public:
   void compute (vector<vector<vector<int > > > & ring_list,
 		const vector<vector<int > > & hbond_list, 
-		const int depth = 10);
+		const int depth = 10, 
+		const int nt = 1) const;
   void unique_list (vector<vector<int > > & u_list,
 		    const vector<vector<vector<int > > > & ring_list) const;
 private:
@@ -30,9 +31,9 @@ private:
 		const int j_idx,
 		const int pj_idx,
 		const vector<vector<int > > & hbond_list, 
-		const int depth);
-  void cut (vector<vector<int > > & ring_list);
-  void remove_dupl (vector<vector<int > > & ring_list);
+		const int depth) const;
+  void cut (vector<vector<int > > & ring_list) const;
+  void remove_dupl (vector<vector<int > > & ring_list) const;
 }
     ;
 
@@ -88,12 +89,14 @@ void
 RingAnalysis::
 compute (vector<vector<vector<int > > > & ring_list,
 	 const vector<vector<int > > & hbond_list, 
-	 const int depth)
-{
+	 const int depth, 
+	 const int func_numb_threads) const
+{  
   int natoms = hbond_list.size();
   ring_list.clear();
   ring_list.resize (natoms);
-  
+
+#pragma omp parallel for num_threads (func_numb_threads)
   for (int ii = 0; ii < natoms; ++ii) {
     // if (ii % 10 == 0) cout << ii << " \r " ;
     // cout.flush();
@@ -103,13 +106,9 @@ compute (vector<vector<vector<int > > > & ring_list,
 	     -1,
 	     hbond_list,
 	     depth);
-  }
-  // cout << endl;
-
-  for (unsigned ii = 0; ii < ring_list.size(); ++ii){
     cut (ring_list[ii]);
     remove_dupl (ring_list[ii]);
-  }  
+  }
 }
 
 
@@ -120,7 +119,7 @@ compute (vector<vector<int > > & ring_list,
 	 const int j_idx, 
 	 const int parent_j_idx,	 
 	 const vector<vector<int > > & hbond_list,
-	 const int depth)
+	 const int depth) const
 {
   if (depth == 1){
     ring_list.clear();
@@ -218,7 +217,7 @@ identical (const vector<int > & r0,
 
 void
 RingAnalysis::
-cut (vector<vector<int > > & ring_list)
+cut (vector<vector<int > > & ring_list) const
 {
   vector<vector<int > > orig (ring_list);
   ring_list.clear();
@@ -267,7 +266,7 @@ is_dupl (const vector<int> & rlist)
 
 void
 RingAnalysis::
-remove_dupl (vector<vector<int > > & ring_list)
+remove_dupl (vector<vector<int > > & ring_list) const
 {
   bool remove = false;
   vector<int > tag (ring_list.size());

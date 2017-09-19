@@ -46,6 +46,7 @@ int main(int argc, char * argv[])
   string ifile, ofile, odir;
   int func_numb_threads;
   int numb_mol_atom;
+  int max_ring;
   double rcut, acut;
   bool p_detail (false), p_mol(false);
   
@@ -56,6 +57,7 @@ int main(int argc, char * argv[])
       ("end,e",   po::value<double > (&end  )->default_value(0.f), "end   time")
       ("r-cut,r",   po::value<double > (&rcut)->default_value(0.35), "the cut-off of O-O dist")
       ("angle-cut,a",   po::value<double > (&acut)->default_value(30), "the cut-off of O-H .. O angle")
+      ("max-ring,m",   po::value<int > (&max_ring)->default_value(10), "the maximum size of rings")      
       ("detail", "print the numb of H-bond of each molecule at each step")
       ("mol-defect", "print if the molecule is in defect status. the history for each atom is printed")
       ("numb-mol-atom", po::value<int > (&numb_mol_atom)->default_value(4), "number of sites in the water molecule")
@@ -234,7 +236,7 @@ int main(int argc, char * argv[])
     
     RingAnalysis ra;
     vector<vector<vector<int > > > r_list;
-    ra.compute (r_list, h_list, 10);
+    ra.compute (r_list, h_list, max_ring, func_numb_threads);
 
     // for (unsigned jj = 0; jj < r_list[0].size(); ++jj){
     //   cout << "ring " << jj << "  " ;
