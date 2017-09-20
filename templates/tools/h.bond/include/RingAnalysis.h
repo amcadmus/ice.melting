@@ -106,8 +106,8 @@ compute (vector<vector<vector<int > > > & ring_list,
 	     -1,
 	     hbond_list,
 	     depth);
-    cut (ring_list[ii]);
     remove_dupl (ring_list[ii]);
+    cut (ring_list[ii]);
   }
 }
 
@@ -167,7 +167,7 @@ check_tag (const vector<int > & tag)
 }
 
 static
-bool
+int
 same (const vector<int > & r0, 
       const vector<int > & r1)
 {
@@ -184,24 +184,19 @@ same (const vector<int > & r0,
     count_e ++;
     if (r0_back - count_e < 0) break;
   }
-  if (count_e + count_b >= 3) return true;
-  return false;
+  return count_e + count_b;
 }
 
 static
-bool
+int
 same_bidir (const vector<int > & r0, 
 	    const vector<int > & r1) 
 {
-  if (same (r0, r1)) {
-    return true;
-  }
-  else {
-    vector<int > r1_ (r1);
-    reverse (r1_.begin() + 1, r1_.end());
-    if (same(r0, r1_)) return true;
-  }
-  return false;
+  int same0 = same (r0, r1);
+  vector<int > r1_ (r1);
+  reverse (r1_.begin() + 1, r1_.end());
+  int same1 = same (r0, r1_);
+  return (same0 > same1) ? same0 : same1;
 }
 
 static
@@ -236,15 +231,26 @@ cut (vector<vector<int > > & ring_list) const
     ring_list.push_back (orig[ref_idx]);
     for (unsigned ii = 0; ii < tag.size(); ++ii){
       if (tag[ii] == 0){
-	if (same_bidir (orig[ref_idx], orig[ii])) {
+	int nsame = 0;
+	if ( ( nsame = same_bidir (orig[ref_idx], orig[ii]) ) >= 3 ) {
 	  assert (orig[ii].size() >= orig[ref_idx].size());
 	  // if (orig[ii].size() == orig[ref_idx].size()){
 	  //   ring_list.push_back (orig[ii]);
 	  // }
 	  // tag[ii] = 1;
-	  if (orig[ii].size() > orig[ref_idx].size()){
+	  if (orig[ii].size() > orig[ref_idx].size()
+	      &&
+	      // orig[ref_idx].size() - nsame < 2
+	      orig[ii].size() - orig[ref_idx].size() >= 2
+	      ){
 	    tag[ii] = 1;
 	  }
+	  // else if (orig[ii].size() > orig[ref_idx].size()) {
+	  //   cout << orig[ii].size() << " " 
+	  // 	 << orig[ref_idx].size() << " " 
+	  // 	 << nsame 
+	  // 	 << endl;
+	  // }
 	}
 	if (identical (orig[ref_idx], orig[ii])) {
 	  tag[ii] = 1;
