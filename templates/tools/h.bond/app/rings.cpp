@@ -268,7 +268,7 @@ int main(int argc, char * argv[])
 
     rs.sys_deposite (ur_list);
     rs.print_frame (fout, time);
-    return 0;
+
     // for (unsigned jj = 0; jj < r_list[0].size(); ++jj){
     //   cout << "ring " << jj << "  " ;
     //   for (unsigned kk = 0; kk < r_list[0][jj].size(); ++kk){
