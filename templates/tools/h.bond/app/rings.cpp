@@ -20,6 +20,7 @@
 #include "HydrogenBond.h"
 #include "HydrogenBondAnalysis.h"
 #include "RingAnalysis.h"
+#include "RingStats.h"
 
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
@@ -39,6 +40,33 @@ void align_water (matrix box,
     else if (oh2[dd] < -hbox) water[2][dd] += box[dd][dd];
   }
 }
+
+void print_step (const string dir,
+		 const int step, 
+		 const double time, 
+		 const vector<vector<int> > & urlist)
+{
+  char fname [1024];
+  // sprintf (fname, "/step_%09d", step);
+  sprintf (fname, "/step_%09d_time_%.3f", step, time);
+  string fpath = dir + string(fname);
+  FILE * fp = fopen (fpath.c_str(), "w");
+  if (fp == NULL){
+    cerr << "cannot open file " << fpath << endl;
+    exit (1);
+  }
+  for (unsigned ii = 0; ii < urlist.size(); ++ii){
+    if (urlist[ii].size() != 6){
+      for (unsigned jj = 0; jj < urlist[ii].size(); ++jj){
+	fprintf (fp, "%d ", urlist[ii][jj]);
+      }
+      fprintf (fp, "\n");
+    }
+  }
+  fclose (fp);
+  
+}
+
 
 int main(int argc, char * argv[])
 {
@@ -146,14 +174,12 @@ int main(int argc, char * argv[])
   CellList clist (nmolecules, vbox, cellSize);
   HydrogenBond_Geo_1::Parameters param (rcut, acut);
   HydrogenBondAnalysis<HydrogenBond_Geo_1> hba (param, nmolecules, func_numb_threads);
+  RingStats rs (nmolecules, max_ring);
 
   int countread = 0;
-  FILE *fout = fopen (ofile.c_str(), "w");
-  if (fout == NULL){
-    cerr << "cannot open file " << ofile << endl;
-    exit (1);
-  }
-  fprintf (fout, "# time  tot_numb_donator  tot_numb_acceptor\n");
+  ofstream fout (ofile.c_str());
+  rs.print_head (fout);
+  
   if (p_detail || p_mol){
     if (access (odir.c_str(), 0) == -1) {
       cout << "# dir " << odir << " does not exist, create." << endl;
@@ -184,7 +210,7 @@ int main(int argc, char * argv[])
     else {
       if (time < begin - time_prec) continue;
     }
-    if (((countread++)) % 10 == 0){
+    if (((countread++)) % 1 == 0){
       printf ("# load frame at time: %.1f ps\r", time);
       fflush (stdout);
     }
@@ -237,7 +263,12 @@ int main(int argc, char * argv[])
     RingAnalysis ra;
     vector<vector<vector<int > > > r_list;
     ra.compute (r_list, h_list, max_ring, func_numb_threads);
+    vector<vector<int > > ur_list;
+    ra.unique_list (ur_list, r_list);
 
+    rs.sys_deposite (ur_list);
+    rs.print_frame (fout, time);
+    return 0;
     // for (unsigned jj = 0; jj < r_list[0].size(); ++jj){
     //   cout << "ring " << jj << "  " ;
     //   for (unsigned kk = 0; kk < r_list[0][jj].size(); ++kk){
@@ -258,19 +289,16 @@ int main(int argc, char * argv[])
     //   // break;
     // }
 
-    vector<vector<int > > ur_list;
-    ra.unique_list (ur_list, r_list);
-    for (unsigned tt = 0; tt < ur_list.size(); ++tt){
-      cout << tt << " \t " ;
-      for (unsigned kk = 0; kk < ur_list[tt].size(); ++kk){
-    	cout << ur_list[tt][kk] << " ";
-      }
-      cout << endl;
-    }
+    // for (unsigned tt = 0; tt < ur_list.size(); ++tt){
+    //   cout << tt << " \t " ;
+    //   for (unsigned kk = 0; kk < ur_list[tt].size(); ++kk){
+    // 	cout << ur_list[tt][kk] << " ";
+    //   }
+    //   cout << endl;
+    // }
     
-    return 0;
     if (p_detail){
-      // print_step (odir, step, time, hba.step_count_don, hba.step_count_acc);
+      print_step (odir, step, time, ur_list);
     }
     if (p_mol){
       // print_mol_defect (odir, step, time, hba.step_count_don, hba.step_count_acc, func_numb_threads);
@@ -279,7 +307,6 @@ int main(int argc, char * argv[])
   printf ("\n");
   
   free (xx);  
-  fclose (fout);
   xdrfile_close (fp);
 
   return 0;
