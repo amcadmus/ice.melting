@@ -5,15 +5,18 @@ class RingStats
 public:
   RingStats (const int nmols, 
 	     const int max_ring = 10);
-  // void mol_compute (vector<vector<int > > & count,
-  // 		    const vector<vector<vector<int > > > & ring_list);
+public:
   void sys_deposite (const vector<vector<int > > & ring_list);
   const vector<double > & get_frame_histo () const {return frame_value;}
   void print_head  (ofstream & fout) const;
   void print_frame (ofstream & fout, const double time) const;
+public:
+  void mol_deposite (const vector<vector<vector<int > > > & ring_list);
+  const vector<vector<double > > & get_frame_mol_dist () const {return frame_mol_value;}
 private:
   vector<double > frame_value;
   vector<double > avg_value;
+  vector<vector<double > > frame_mol_value;
   int nmols;
   int max_ring;
   int nframes;
@@ -24,6 +27,7 @@ RingStats::
 RingStats (const int nmols_, const int max_ring_)
     : frame_value (1+max_ring_, 0.),
       avg_value (1+max_ring_, 0.),
+      frame_mol_value (nmols_, vector<double> (1+max_ring_, 0.)),
       nmols (nmols_),
       max_ring (max_ring_), 
       nframes (0),
@@ -41,6 +45,20 @@ sys_deposite (const vector<vector<int > > & ring_list)
   }
   for (unsigned ii = 0; ii < frame_value.size(); ++ii){
     frame_value[ii] /= double (nmols);
+  }
+}
+
+void 
+RingStats::
+mol_deposite (const vector<vector<vector<int > > > & ring_list)
+{
+  assert (frame_mol_value.size() == ring_list.size());
+  for (unsigned kk = 0; kk < frame_mol_value.size(); ++kk){
+    fill (frame_mol_value[kk].begin(), frame_mol_value[kk].end(), 0.);
+    for (unsigned ii = 0; ii < ring_list[kk].size(); ++ii){
+      assert (int(ring_list[kk][ii].size()) <= max_ring);
+      frame_mol_value[kk][ring_list[kk][ii].size()] += 1. / double(ring_list[kk].size());
+    }    
   }
 }
 

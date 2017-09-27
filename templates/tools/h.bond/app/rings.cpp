@@ -48,7 +48,7 @@ void print_step (const string dir,
 {
   char fname [1024];
   // sprintf (fname, "/step_%09d", step);
-  sprintf (fname, "/step_%09d_time_%.3f", step, time);
+  sprintf (fname, "/def_ring_%09d_time_%.3f", step, time);
   string fpath = dir + string(fname);
   FILE * fp = fopen (fpath.c_str(), "w");
   if (fp == NULL){
@@ -67,6 +67,30 @@ void print_step (const string dir,
   
 }
 
+void print_mol_dist (const string dir,
+		     const int step, 
+		     const double time, 
+		     const vector<vector<double > >  & mol_dist)
+{
+  char fname [1024];
+  // sprintf (fname, "/step_%09d", step);
+  sprintf (fname, "/mol_dist_%09d_time_%.3f", step, time);
+  string fpath = dir + string(fname);
+  FILE * fp = fopen (fpath.c_str(), "w");
+  if (fp == NULL){
+    cerr << "cannot open file " << fpath << endl;
+    exit (1);
+  }
+  for (unsigned ii = 0; ii < mol_dist.size(); ++ii){
+    for (unsigned jj = 3; jj < mol_dist[ii].size(); ++jj){
+      fprintf (fp , "%.6e ", mol_dist[ii][jj]);
+    }
+    fprintf (fp, "\n");
+  }
+  fclose (fp);
+  
+}
+
 
 int main(int argc, char * argv[])
 {
@@ -76,7 +100,7 @@ int main(int argc, char * argv[])
   int numb_mol_atom;
   int max_ring;
   double rcut, acut;
-  bool p_detail (false), p_mol(false);
+  bool p_def_ring (false), p_mol_dist(false);
   
   po::options_description desc ("Allow options");
   desc.add_options()
@@ -86,8 +110,8 @@ int main(int argc, char * argv[])
       ("r-cut,r",   po::value<double > (&rcut)->default_value(0.35), "the cut-off of O-O dist")
       ("angle-cut,a",   po::value<double > (&acut)->default_value(30), "the cut-off of O-H .. O angle")
       ("max-ring,m",   po::value<int > (&max_ring)->default_value(10), "the maximum size of rings")      
-      ("detail", "print the numb of H-bond of each molecule at each step")
-      ("mol-defect", "print if the molecule is in defect status. the history for each atom is printed")
+      ("def-ring,D", "print the non 6-ring at each step")
+      ("mol-dist,M", "print the molecular ring distribution")
       ("numb-mol-atom", po::value<int > (&numb_mol_atom)->default_value(4), "number of sites in the water molecule")
       ("numb-threads,t", po::value<int > (&func_numb_threads)->default_value(1), "number of threads")
       ("input,f",   po::value<string > (&ifile)->default_value ("traj.xtc"), "the input .xtc file")
@@ -101,11 +125,11 @@ int main(int argc, char * argv[])
     cout << desc<< "\n";
     return 0;
   }
-  if (vm.count("detail")){
-    p_detail = true;
+  if (vm.count("def-ring")){
+    p_def_ring = true;
   }
-  if (vm.count("mol-defect")){
-    p_mol = true;
+  if (vm.count("mol-dist")){
+    p_mol_dist = true;
   }
 
   cellSize = rcut + 1e-6;
@@ -115,7 +139,7 @@ int main(int argc, char * argv[])
   cout << "# numb sites in water: " << numb_mol_atom << endl;
   cout << "# input: " << ifile << endl;
   cout << "# output: " << ofile << endl;
-  if (p_detail){
+  if (p_def_ring){
     cout << "# output dir: " << odir << endl;
   }
   cout << "# rcut: " << rcut << endl;
@@ -180,7 +204,7 @@ int main(int argc, char * argv[])
   ofstream fout (ofile.c_str());
   rs.print_head (fout);
   
-  if (p_detail || p_mol){
+  if (p_def_ring || p_mol_dist){
     if (access (odir.c_str(), 0) == -1) {
       cout << "# dir " << odir << " does not exist, create." << endl;
       if (mkdir (odir.c_str(), 0755)){
@@ -195,7 +219,7 @@ int main(int argc, char * argv[])
     cerr << "cannot open file " << ifile << endl;
     exit (1);
   }
-  if (p_mol) {
+  if (p_mol_dist) {
     // open_mol_defect (odir, nmolecules);
   }
   while (read_xtc (fp, natoms, &step, &time, box, xx, &prec) == 0){
@@ -266,6 +290,7 @@ int main(int argc, char * argv[])
     vector<vector<int > > ur_list;
     ra.unique_list (ur_list, r_list);
 
+    rs.mol_deposite (r_list);
     rs.sys_deposite (ur_list);
     rs.print_frame (fout, time);
 
@@ -297,11 +322,11 @@ int main(int argc, char * argv[])
     //   cout << endl;
     // }
     
-    if (p_detail){
+    if (p_def_ring){
       print_step (odir, step, time, ur_list);
     }
-    if (p_mol){
-      // print_mol_defect (odir, step, time, hba.step_count_don, hba.step_count_acc, func_numb_threads);
+    if (p_mol_dist){
+      print_mol_dist (odir, step, time, rs.get_frame_mol_dist());
     }
   }
   printf ("\n");

@@ -19,7 +19,7 @@ fi
 
 cwd=`pwd`
 cd $idir
-nframe=`ls step* | wc -l`
+nframe=`ls def_ring* | wc -l`
 cd $cwd
 
 for ii in `seq 1 $nframe`
@@ -40,13 +40,13 @@ animate goto 0
 animate goto $ii
 mol rep hbonds 3.0 40 3
 EOF
-    ring_file=$idir/`ls $idir | head -n $ii | tail -n 1`
+    ring_file=$idir/`ls $idir | grep def_ring | head -n $ii | tail -n 1`
     nlines=`cat $ring_file | wc -l`
     echo $ring_file $nlines
     for jj in `seq 1 $nlines`
     do
 	nwords=`head -n $jj $ring_file | tail -n 1 | wc -w`
-	echo "mol color ColorID $nwords" >> $ofile
+#	echo "mol color ColorID $nwords" >> $ofile
 	echo "mol addrep \$mol_id" >> $ofile
     done	      
     for jj in `seq 1 $nlines`
@@ -59,7 +59,8 @@ EOF
 	if test $nwords -eq 5; then
 	    echo "mol modstyle $jj \$mol_id vdw" >> $ofile
 	else
-	    echo "mol modstyle $jj \$mol_id hbonds" >> $ofile
+#	    echo "mol modstyle $jj \$mol_id hbonds" >> $ofile
+	    echo "mol modstyle $jj \$mol_id vdw" >> $ofile
 	fi
     done	      
     
