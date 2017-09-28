@@ -19,6 +19,7 @@
 #include "CellList.h"
 #include "TetrahedralAnalysis.h"
 #include "RandomGenerator.h"
+#include "Histogram.h"
 
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
@@ -90,11 +91,12 @@ print_mol_defect (const string dir,
 int main(int argc, char * argv[])
 {
   double begin, end, cellSize;
-  string ifile, ofile, odir;
+  string ifile, ofile, odir, hfile;
   // int func_numb_threads;
   int numb_mol_atom;
   double rcut, acut;
-  bool p_detail (false);
+  bool p_detail (false), u_com(false);
+  int nbins;
   
   po::options_description desc ("Allow options");
   desc.add_options()
@@ -102,10 +104,13 @@ int main(int argc, char * argv[])
       ("begin,b", po::value<double > (&begin)->default_value(0.f), "start time")
       ("end,e",   po::value<double > (&end  )->default_value(0.f), "end   time")
       ("r-cut,r",   po::value<double > (&rcut)->default_value(0.5), "the cut-off of O-O dist")
+      ("n-bin,n",   po::value<int > (&nbins)->default_value(100), "the number of bins")
       ("detail,D", "print the numb of tetra of each molecule at each step")
       ("numb-mol-atom", po::value<int > (&numb_mol_atom)->default_value(4), "number of sites in the water molecule")
+      ("com",	"use center of mass instead of oxygen")
       ("input,f",   po::value<string > (&ifile)->default_value ("traj.xtc"), "the input .xtc file")
-      ("output,o",  po::value<string > (&ofile)->default_value ("tetra.out"), "the output file")
+      ("output,o",  po::value<string > (&ofile)->default_value ("tetra.out"), "the time evolution of the avg tetra parameter")
+      ("histo,H",  po::value<string > (&hfile)->default_value ("histo.tetra.out"), "the histogram of the tetra parameter")
       ("output-dir",  po::value<string > (&odir)->default_value ("tetra"), "the output directory of H-bond detailed information");
   
   po::variables_map vm;
@@ -117,6 +122,10 @@ int main(int argc, char * argv[])
   }
   if (vm.count("detail")){
     p_detail = true;
+  }
+  if (vm.count("com")){
+    u_com = true;
+    assert (numb_mol_atom >= 3);
   }
 
   cellSize = rcut + 1e-6;
@@ -181,6 +190,7 @@ int main(int argc, char * argv[])
   coms.reserve (nmolecules);
   vector<vector<vector<double > > > waters;
   waters.reserve (nmolecules * 3);
+  vector<double > allq;
 
   CellList clist (nmolecules, vbox, cellSize);
   TetrahedralAnalysis ta (rcut);
@@ -228,14 +238,38 @@ int main(int argc, char * argv[])
     int nmol = natoms / numb_mol_atom;    
     vector<double > read_com(3, 0.);
 
-    for (int ii = 0; ii < nmol; ++ii){
-      for (int dd = 0; dd < 3; ++dd){
-	read_com[dd] = xx[ii*numb_mol_atom][dd];
-	if      (read_com[dd] <  0          ) read_com[dd] += box[dd][dd];
-	else if (read_com[dd] >= box[dd][dd]) read_com[dd] -= box[dd][dd];
-	// read_com[dd] = box[dd][dd] * RandomGenerator_MT19937::genrand_real2();
+    if (u_com) {
+      for (int ii = 0; ii < nmol; ++ii){
+	vector<vector<double > > read_water(3, vector<double > (3, 0.));
+	for (int jj = 0; jj < 3; ++jj){
+	  for (int dd = 0; dd < 3; ++dd){
+	    read_water[jj][dd] = xx[ii*numb_mol_atom + jj][dd];
+	  }
+	}
+	for (int dd = 0; dd < 3; ++dd){
+	  if      (read_water[0][dd] <  0          ) read_water[0][dd] += box[dd][dd];
+	  else if (read_water[0][dd] >= box[dd][dd]) read_water[0][dd] -= box[dd][dd];
+	}
+	align_water (box, read_water);
+	for (int dd = 0; dd < 3; ++dd){
+	  read_com[dd] = 16 * read_water[0][dd] + read_water[1][dd] + read_water[2][dd];
+	  read_com[dd] /= 18.;
+	  if      (read_com[dd] <  0          ) read_com[dd] += box[dd][dd];
+	  else if (read_com[dd] >= box[dd][dd]) read_com[dd] -= box[dd][dd];
+	}
+	coms.push_back (read_com);
       }
-      coms.push_back (read_com);
+    }
+    else {
+      for (int ii = 0; ii < nmol; ++ii){
+	for (int dd = 0; dd < 3; ++dd){
+	  read_com[dd] = xx[ii*numb_mol_atom][dd];
+	  if      (read_com[dd] <  0          ) read_com[dd] += box[dd][dd];
+	  else if (read_com[dd] >= box[dd][dd]) read_com[dd] -= box[dd][dd];
+	  // read_com[dd] = box[dd][dd] * RandomGenerator_MT19937::genrand_real2();
+	}
+	coms.push_back (read_com);
+      }
     }
 
     vbox.x = box[0][0];
@@ -248,6 +282,7 @@ int main(int argc, char * argv[])
 
     vector<double > qq;
     ta.compute (qq, clist, vect_box, coms);
+    allq.insert (allq.end(), qq.begin(), qq.end());
 
     double avg = 0;
     for (unsigned ii= 0; ii < qq.size(); ++ii){
@@ -262,6 +297,16 @@ int main(int argc, char * argv[])
   }
   printf ("\n");
   
+  Histogram histo (nbins, -.2, 1);
+  histo.processData (allq);
+  vector<double > tmpxx, tmpvv;
+  histo.getResult (tmpxx, tmpvv);
+  ofstream myofs;
+  myofs.open (hfile.c_str());
+  for (unsigned ii = 0; ii < tmpxx.size(); ++ii){
+    myofs << tmpxx[ii] << "\t" << tmpvv[ii] << endl;
+  }
+
   free (xx);  
   fclose (fout);
   xdrfile_close (fp);
