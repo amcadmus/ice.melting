@@ -305,6 +305,9 @@ findDLPair (vector<pair<int, int > > & dpair,
 	    const vector<double> box,
 	    const vector<vector<vector<double > > > & waters) const
 {
+  HydrogenBond_Geo_1::Parameters param (hydrogen_bond.getRcut(), 60);
+  HydrogenBond_Geo_1 hb_rule_1 (param);
+
   dpair.clear();
   lpair.clear();
   
@@ -328,6 +331,60 @@ findDLPair (vector<pair<int, int > > & dpair,
   assert (numb_water == step_count_don.size());
   
   unsigned cellIndexUpper = unsigned(nCell.x * nCell.y * nCell.z);
+
+  vector<int > count_acc (numb_water, 0);
+  vector<int > count_don (numb_water, 0);  
+
+  for (unsigned iCellIndex = 0;
+       iCellIndex < cellIndexUpper;
+       iCellIndex += 1){
+    const vector<unsigned> & iCellList (clist.getList()[iCellIndex]);
+    vector<unsigned > neighborCellIndex =
+	clist.neighboringCellIndex (iCellIndex, IntVectorType (xiter, yiter, ziter));
+    // loop of all neighboring cells of i
+    for (unsigned iNeighborCellIndex = 0;
+	 iNeighborCellIndex < neighborCellIndex.size();
+	 ++iNeighborCellIndex){
+      unsigned jCellIndex = neighborCellIndex[iNeighborCellIndex];
+      const vector<unsigned> & jCellList (clist.getList()[jCellIndex]);
+      bool sameCell (iCellIndex == jCellIndex);
+      for (unsigned ii = 0; ii < iCellList.size(); ++ii){
+	int i_index = iCellList[ii];
+	for (unsigned jj = 0; jj < jCellList.size(); ++jj){
+	  if (sameCell && ii == jj) continue;	    
+	  int j_index = jCellList[jj];
+	  if (i_index >= j_index) continue;
+	  vector<double > io(3); 
+	  for (int dd = 0; dd < 3; ++dd) io[dd] = waters[i_index][0][dd];
+	  vector<double > jo(3);
+	  for (int dd = 0; dd < 3; ++dd) jo[dd] = waters[j_index][0][dd];
+	  vector<double > diff (3);
+	  for (int dd = 0; dd < 3; ++dd) diff[dd] = jo[dd] - io[dd];
+	  vector<int > shift(3, 0);
+	  for (int dd = 0; dd < 3; ++dd){
+	    if      (diff[dd] < -.5 * box[dd]) shift[dd] += 1;
+	    else if (diff[dd] >= .5 * box[dd]) shift[dd] -= 1;
+	  }
+	  vector<vector<double > > j_water = waters[j_index];
+	  for (int kk = 0; kk < 3; ++kk){
+	    for (int dd = 0; dd < 3; ++dd){
+	      j_water[kk][dd] += box[dd] * shift[dd];
+	    }
+	  }
+	  // if (
+	  if (hydrogen_bond (waters[i_index], j_water)){
+	    count_don[i_index] ++;
+	    count_acc[j_index] ++;
+	  }
+	  if (hydrogen_bond (j_water, waters[i_index])){
+	    count_acc[i_index] ++;
+	    count_don[j_index] ++;
+	  }
+	}
+      }
+    }
+  }
+
 
   for (unsigned iCellIndex = 0;
        iCellIndex < cellIndexUpper;
@@ -367,19 +424,41 @@ findDLPair (vector<pair<int, int > > & dpair,
 	  }
 	  const vector<vector<double > > & i_water = waters[i_index];
 	  // un-directional
-	  if (hydrogen_bond (waters[i_index], j_water) &&
-	      hydrogen_bond (j_water, waters[i_index]) ){
+	  if ( hb_rule_1 (i_water, j_water) 
+	       && hb_rule_1 (j_water, i_water)	       
+	       && count_don[i_index] >= 1
+	       && count_don[j_index] >= 1
+	       && count_acc[i_index] == 2
+	       && count_acc[j_index] == 2 
+	      ) {
+	    // cout << i_index << " " 
+	    // 	 << j_index << " " 
+	    // 	 << count_don[i_index] << " " 
+	    // 	 << count_don[j_index] << " " 
+	    // 	 << count_acc[i_index] << " " 
+	    // 	 << count_acc[j_index] << " "  
+	    // 	 <<  endl;
 	    dpair.push_back (pair<int, int> (i_index, j_index));
-	    cout << i_index << " " << j_index << endl;
+	    // cout << i_index << " " << j_index << endl;
 	  }
 	  for (int dd = 0; dd < 3; ++dd) diff[dd] = i_water[0][dd] - j_water[0][dd];
 	  double rr = 0;
 	  for (int dd = 0; dd < 3; ++dd) rr += diff[dd] * diff[dd];
 	  rr = sqrt(rr);
-	  if (rr < hydrogen_bond.getRcut() && 
-	      ! hydrogen_bond (i_water, j_water) &&
-	      ! hydrogen_bond (j_water, i_water) ){
-	    lpair.push_back (pair<int, int> (i_index, j_index));	    
+	  if (rr < hydrogen_bond.getRcut() 
+	      && (! hydrogen_bond (i_water, j_water))
+	      && (! hydrogen_bond (j_water, i_water))
+	      && count_don[i_index] == 2
+	      && count_don[j_index] == 2
+	      && count_acc[i_index] == 1
+	      && count_acc[j_index] == 1
+	      ){
+	    // cout << count_don[i_index] << " " 
+	    // 	 << count_don[j_index] << " " 
+	    // 	 << count_acc[i_index] << " " 
+	    // 	 << count_acc[j_index] << " "  
+	    // 	 <<  endl;
+	    lpair.push_back (pair<int, int> (i_index, j_index));
 	  }   
 	}
       }
