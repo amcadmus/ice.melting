@@ -94,7 +94,7 @@ int main(int argc, char * argv[])
   string ifile, ofile, odir, hfile;
   // int func_numb_threads;
   int numb_mol_atom;
-  double rcut, acut;
+  double rcut;
   bool p_detail (false), u_com(false);
   int nbins;
   
@@ -139,7 +139,6 @@ int main(int argc, char * argv[])
     cout << "# output dir: " << odir << endl;
   }
   cout << "# rcut: " << rcut << endl;
-  cout << "# acut: " << acut << endl;
   cout << "###################################################" << endl;  
   
   XDRFILE *fp;
